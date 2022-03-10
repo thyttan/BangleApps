@@ -21,9 +21,10 @@ function openMusic() {
  */
 exports.load = function() {
   // start with contents of old file (if it still exists)
-  var events = (require("Storage").readJSON("messages.json", 1) || []).reverse(); // newest message is first in array, but last in StorageFile
-  var e, l, f = require("Storage").open("messages.jsonl", "r");
-  var ids = {}, idx; // keep a list of id=>index
+  const events = (require("Storage").readJSON("messages.json", 1) || []).reverse(); // newest message is first in array, but last in StorageFile
+  const f = require("Storage").open("messages.jsonl", "r");
+  let e,l,ids = {};
+  let idx; // keep a list of id=>index
   while((l = f.readLine())!==undefined) {
     e = JSON.parse(l);
     idx = ids[e.id];
@@ -64,8 +65,8 @@ exports.load = function() {
  */
 exports.haveNew = function() {
   try {
-    if ("undefined"!== typeof MESSAGES) return MESSAGES.some(e => e.new && e.id!="music");
-    return exports.load().some(e => e.new && e.id!="music");
+    if ("undefined"!== typeof MESSAGES) return MESSAGES.some(e => e.new && e.id!=="music");
+    return exports.load().some(e => e.new && e.id!=="music");
   } catch(e) {
     return false; // don't bother e.g. the widget with errors
   }
@@ -100,19 +101,20 @@ exports.compact = function() {
  * @param {object} event
  */
 exports.pushMessage = function(event) {
-  var messages, inApp = "undefined"!= typeof MESSAGES;
-  if (event.t=="add" && event.new===undefined) { // If 'new' has not been set yet, set it
+  let messages;
+  const inApp = "undefined"!= typeof MESSAGES;
+  if (event.t==="add" && event.new===undefined) { // If 'new' has not been set yet, set it
     event.new = true; // Assume it should be new
-  } else if (event.t=="remove") {
-    if (event.id==undefined) return; // we can't handle this
+  } else if (event.t==="remove") {
+    if (event.id===undefined) return; // we can't handle this
     event = {t: "remove", id: event.id}; // we only need the id
   }
   if (inApp) {
     // we're in an app that has already loaded messages
     messages = MESSAGES;
     // modify/delete as appropriate
-    var mIdx = messages.findIndex(m => m.id==event.id);
-    if (event.t=="remove") {
+    let mIdx = messages.findIndex(m => m.id===event.id);
+    if (event.t==="remove") {
       if (mIdx>=0) messages.splice(mIdx, 1); // remove item
       mIdx = -1;
     } else { // add/modify
@@ -121,7 +123,7 @@ exports.pushMessage = function(event) {
         messages.unshift(event); // add new messages to the beginning
       } else {
         Object.assign(messages[mIdx], event);
-        if (event.id=="music" && messages[mIdx].state=="play") {
+        if (event.id==="music" && messages[mIdx].state==="play") {
           messages[mIdx].new = true; // new track, or playback (re)started
         }
       }
@@ -131,26 +133,26 @@ exports.pushMessage = function(event) {
   }
   // not in app: append to stored list of messages
   append(event);
-  if (event.t=="remove") {
+  if (event.t==="remove") {
     // if we've removed the last new message, hide the widget
     if (global.WIDGETS && WIDGETS.message && !exports.haveNew()) WIDGETS.messages.hide();
   }
-  if ((event.t=="remove" || event.t=="modify") && Math.random()>=0.8) {
+  if ((event.t==="remove" || event.t==="modify") && Math.random()>=0.8) {
     // perform housekeeping every so often
     exports.compact();
   }
   // ok, saved now
-  if (event.id=="music" && Bangle.CLOCK && event.state=="play" && event.track && openMusic()) {
+  if (event.id==="music" && Bangle.CLOCK && event.state==="play" && event.track && openMusic()) {
     // just load the app to display music: no buzzing
     load("messages.app.js");
-  } else if (event.t!="add" || !event.new) {
+  } else if (event.t!=="add" || !event.new) {
     // we only care if it's new
     return;
   }
   // otherwise load messages/show widget
-  var loadMessages = Bangle.CLOCK || event.important;
+  const loadMessages = Bangle.CLOCK || event.important;
   // first, buzz
-  var quiet = (require("Storage").readJSON("setting.json", 1) || {}).quiet;
+  const quiet = (require("Storage").readJSON("setting.json", 1) || {}).quiet;
   if (!quiet && loadMessages && global.WIDGETS && WIDGETS.messages) {
     WIDGETS.messages.buzz();
   }
@@ -166,7 +168,7 @@ exports.pushMessage = function(event) {
 };
 /// Remove all messages
 exports.clearAll = function() {
-  var inApp = "undefined"!= typeof MESSAGES;
+  const inApp = "undefined"!= typeof MESSAGES;
   if (inApp) MESSAGES = []; // we're in an app that has already loaded messages
   // Erase messages file
   exports.save([]);

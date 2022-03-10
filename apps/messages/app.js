@@ -20,14 +20,14 @@
 {"t":"add","id":"call","src":"Phone","name":"Bob","number":"12421312",positive:true,negative:true}
 */
 
-var Layout = require("Layout");
-var settings = require("Storage").readJSON("messages.settings.json", true) || {};
-var fontSmall = "6x8";
-var fontMedium = g.getFonts().includes("6x15") ? "6x15" : "6x8:2";
-var fontBig = g.getFonts().includes("12x20") ? "12x20" : "6x8:2";
-var fontLarge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
-var active; // active screen
-var openMusic = false; // go back to music screen after we handle something else?
+const Layout = require("Layout");
+const settings = require("Storage").readJSON("messages.settings.json", true) || {};
+const fontSmall = "6x8";
+const fontMedium = g.getFonts().includes("6x15") ? "6x15" : "6x8:2";
+const fontBig = g.getFonts().includes("12x20") ? "12x20" : "6x8:2";
+const fontLarge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
+let active; // active screen
+let openMusic = false; // go back to music screen after we handle something else?
 // hack for 2v10 firmware's lack of ':size' font handling
 try {
   g.setFont("6x8:2");
@@ -46,9 +46,9 @@ try {
  but the user hasn't seen it (eg no user input) - in which case
  we should start a timeout for settings.unreadTimeout to return
  to the clock. */
-var unreadTimeout;
+let unreadTimeout;
 /// List of all our messages
-var MESSAGES;
+let MESSAGES;
 try {
   MESSAGES = require("messages").load();
   // Write them back to storage when we're done
@@ -68,7 +68,7 @@ try {
   });
 }
 // used by lib.js to inform app of updates
-var onMessagesModified = function(msg) {
+const onMessagesModified = function(msg) {
   // TODO: if new, show this new one
   if (msg && msg.id!=="music" && msg.new && !((require("Storage").readJSON("setting.json", 1) || {}).quiet)) {
     if (WIDGETS["messages"]) {
@@ -77,9 +77,9 @@ var onMessagesModified = function(msg) {
       Bangle.buzz();
     }
   }
-  if (msg && msg.id=="music") {
-    if (msg.state && msg.state!="play") openMusic = false; // no longer playing music to go back to
-    if (active!="music") return; // don't open music over other screens
+  if (msg && msg.id==="music") {
+    if (msg.state && msg.state!=="play") openMusic = false; // no longer playing music to go back to
+    if (active!=="music") return; // don't open music over other screens
   }
   showMessage(msg && msg.id);
 };
@@ -104,29 +104,29 @@ function getNegImage() {
 */
 function getMessageImage(msg) {
   if (msg.img) return atob(msg.img);
-  var s = (msg.src || "").toLowerCase();
-  if (s=="alarm" || s=="alarmclockreceiver") return atob("GBjBAP////8AAAAAAAACAEAHAOAefng5/5wTgcgHAOAOGHAMGDAYGBgYGBgYGBgYGBgYDhgYBxgMATAOAHAHAOADgcAB/4AAfgAAAAAAAAA=");
-  if (s=="calendar") return atob("GBiBAAAAAAAAAAAAAA//8B//+BgAGBgAGBgAGB//+B//+B//+B9m2B//+B//+Btm2B//+B//+Btm+B//+B//+A//8AAAAAAAAAAAAA==");
-  if (s=="facebook") return getFBIcon();
-  if (s=="hangouts") return atob("FBaBAAH4AH/gD/8B//g//8P//H5n58Y+fGPnxj5+d+fmfj//4//8H//B//gH/4A/8AA+AAHAABgAAAA=");
-  if (s=="home assistant") return atob("FhaBAAAAAADAAAeAAD8AAf4AD/3AfP8D7fwft/D/P8ec572zbzbNsOEhw+AfD8D8P4fw/z/D/P8P8/w/z/AAAAA=");
-  if (s=="instagram") return atob("GBiBAAAAAAAAAAAAAAAAAAP/wAYAYAwAMAgAkAh+EAjDEAiBEAiBEAiBEAiBEAjDEAh+EAgAEAwAMAYAYAP/wAAAAAAAAAAAAAAAAA==");
-  if (s=="gmail") return getNotificationImage();
-  if (s=="google home") return atob("GBiCAAAAAAAAAAAAAAAAAAAAAoAAAAAACqAAAAAAKqwAAAAAqroAAAACquqAAAAKq+qgAAAqr/qoAACqv/6qAAKq//+qgA6r///qsAqr///6sAqv///6sAqv///6sAqv///6sA6v///6sA6v///qsA6qqqqqsA6qqqqqsA6qqqqqsAP7///vwAAAAAAAAAAAAAAAAA==");
-  if (s=="mail") return getNotificationImage();
-  if (s=="messenger") return getFBIcon();
-  if (s=="outlook mail") return getNotificationImage();
-  if (s=="phone") return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
-  if (s=="skype") return atob("GhoBB8AAB//AA//+Af//wH//+D///w/8D+P8Afz/DD8/j4/H4fP5/A/+f4B/n/gP5//B+fj8fj4/H8+DB/PwA/x/A/8P///B///gP//4B//8AD/+AAA+AA==");
-  if (s=="slack") return atob("GBiBAAAAAAAAAABAAAHvAAHvAADvAAAPAB/PMB/veD/veB/mcAAAABzH8B3v+B3v+B3n8AHgAAHuAAHvAAHvAADGAAAAAAAAAAAAAA==");
-  if (s=="sms message") return getNotificationImage();
-  if (s=="threema") return atob("GBjB/4Yx//8AAAAAAAAAAAAAfgAB/4AD/8AH/+AH/+AP//AP2/APw/APw/AHw+AH/+AH/8AH/4AH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-  if (s=="twitter") return atob("GhYBAABgAAB+JgA/8cAf/ngH/5+B/8P8f+D///h///4f//+D///g///wD//8B//+AP//gD//wAP/8AB/+AB/+AH//AAf/AAAYAAA");
-  if (s=="telegram") return atob("GBiBAAAAAAAAAAAAAAAAAwAAHwAA/wAD/wAf3gD/Pgf+fh/4/v/z/P/H/D8P/Acf/AM//AF/+AF/+AH/+ADz+ADh+ADAcAAAMAAAAA==");
-  if (s=="whatsapp") return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
-  if (s=="wordfeud") return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
-  if (msg.id=="music") return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
-  if (msg.id=="back") return getBackImage();
+  const s = (msg.src || "").toLowerCase();
+  if (s==="alarm" || s==="alarmclockreceiver") return atob("GBjBAP////8AAAAAAAACAEAHAOAefng5/5wTgcgHAOAOGHAMGDAYGBgYGBgYGBgYGBgYDhgYBxgMATAOAHAHAOADgcAB/4AAfgAAAAAAAAA=");
+  if (s==="calendar") return atob("GBiBAAAAAAAAAAAAAA//8B//+BgAGBgAGBgAGB//+B//+B//+B9m2B//+B//+Btm2B//+B//+Btm+B//+B//+A//8AAAAAAAAAAAAA==");
+  if (s==="facebook") return getFBIcon();
+  if (s==="hangouts") return atob("FBaBAAH4AH/gD/8B//g//8P//H5n58Y+fGPnxj5+d+fmfj//4//8H//B//gH/4A/8AA+AAHAABgAAAA=");
+  if (s==="home assistant") return atob("FhaBAAAAAADAAAeAAD8AAf4AD/3AfP8D7fwft/D/P8ec572zbzbNsOEhw+AfD8D8P4fw/z/D/P8P8/w/z/AAAAA=");
+  if (s==="instagram") return atob("GBiBAAAAAAAAAAAAAAAAAAP/wAYAYAwAMAgAkAh+EAjDEAiBEAiBEAiBEAiBEAjDEAh+EAgAEAwAMAYAYAP/wAAAAAAAAAAAAAAAAA==");
+  if (s==="gmail") return getNotificationImage();
+  if (s==="google home") return atob("GBiCAAAAAAAAAAAAAAAAAAAAAoAAAAAACqAAAAAAKqwAAAAAqroAAAACquqAAAAKq+qgAAAqr/qoAACqv/6qAAKq//+qgA6r///qsAqr///6sAqv///6sAqv///6sAqv///6sA6v///6sA6v///qsA6qqqqqsA6qqqqqsA6qqqqqsAP7///vwAAAAAAAAAAAAAAAAA==");
+  if (s==="mail") return getNotificationImage();
+  if (s==="messenger") return getFBIcon();
+  if (s==="outlook mail") return getNotificationImage();
+  if (s==="phone") return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
+  if (s==="skype") return atob("GhoBB8AAB//AA//+Af//wH//+D///w/8D+P8Afz/DD8/j4/H4fP5/A/+f4B/n/gP5//B+fj8fj4/H8+DB/PwA/x/A/8P///B///gP//4B//8AD/+AAA+AA==");
+  if (s==="slack") return atob("GBiBAAAAAAAAAABAAAHvAAHvAADvAAAPAB/PMB/veD/veB/mcAAAABzH8B3v+B3v+B3n8AHgAAHuAAHvAAHvAADGAAAAAAAAAAAAAA==");
+  if (s==="sms message") return getNotificationImage();
+  if (s==="threema") return atob("GBjB/4Yx//8AAAAAAAAAAAAAfgAB/4AD/8AH/+AH/+AP//AP2/APw/APw/AHw+AH/+AH/8AH/4AH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+  if (s==="twitter") return atob("GhYBAABgAAB+JgA/8cAf/ngH/5+B/8P8f+D///h///4f//+D///g///wD//8B//+AP//gD//wAP/8AB/+AB/+AH//AAf/AAAYAAA");
+  if (s==="telegram") return atob("GBiBAAAAAAAAAAAAAAAAAwAAHwAA/wAD/wAf3gD/Pgf+fh/4/v/z/P/H/D8P/Acf/AM//AF/+AF/+AH/+ADz+ADh+ADAcAAAMAAAAA==");
+  if (s==="whatsapp") return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
+  if (s==="wordfeud") return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
+  if (msg.id==="music") return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
+  if (msg.id==="back") return getBackImage();
   return getNotificationImage();
 }
 function getMessageImageCol(msg, def) {
@@ -160,8 +160,8 @@ function getMessageImageCol(msg, def) {
 
 function showMapMessage(msg) {
   active = "map";
-  var m;
-  var distance, street, target, eta;
+  let m;
+  let distance, street, target, eta;
   m = msg.title.match(/(.*) - (.*)/);
   if (m) {
     distance = m[1];
@@ -176,7 +176,7 @@ function showMapMessage(msg) {
   } else {
     target = msg.body;
   }
-  layout = new Layout({
+  let layout = new Layout({
     type: "v", c: [
       {type: "txt", font: fontMedium, label: target, bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2},
       {
@@ -208,32 +208,32 @@ function showMapMessage(msg) {
   });
 }
 
-var updateLabelsInterval;
+let updateLabelsInterval;
 function showMusicMessage(msg) {
   active = "music";
-  openMusic = msg.state=="play";
-  var trackScrollOffset = 0;
-  var artistScrollOffset = 0;
-  var albumScrollOffset = 0;
-  var trackName = "";
-  var artistName = "";
-  var albumName = "";
+  openMusic = msg.state==="play";
+  let trackScrollOffset = 0;
+  let artistScrollOffset = 0;
+  let albumScrollOffset = 0;
+  let trackName = "";
+  let artistName = "";
+  let albumName = "";
 
   function fmtTime(s) {
-    var m = Math.floor(s/60);
+    const m = Math.floor(s/60);
     s = (parseInt(s%60)).toString().padStart(2, 0);
     return m+":"+s;
   }
   function reduceStringAndPad(text, offset, maxLen) {
-    var sliceLength = offset+maxLen>text.length ? text.length-offset : maxLen;
-    return text.substr(offset, sliceLength).padEnd(maxLen, " ");
+    const sliceLength = offset+maxLen>text.length ? text.length-offset : maxLen;
+    return text.substring(offset, offset+sliceLength).padEnd(maxLen, " ");
   }
 
   function back() {
     clearInterval(updateLabelsInterval);
     updateLabelsInterval = undefined;
     openMusic = false;
-    var wasNew = msg.new;
+    const wasNew = msg.new;
     msg.new = false;
     layout = undefined;
     if (wasNew) {
@@ -257,7 +257,7 @@ function showMusicMessage(msg) {
   }
   updateLabels();
 
-  layout = new Layout({
+  let layout = new Layout({
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
@@ -295,11 +295,11 @@ function showMusicMessage(msg) {
 
 function showMessageScroller(msg) {
   active = "scroller";
-  var bodyFont = fontBig;
+  const bodyFont = fontBig;
   g.setFont(bodyFont);
-  var lines = [];
+  let lines = [];
   if (msg.title) lines = g.wrapString(msg.title, g.getWidth()-10);
-  var titleCnt = lines.length;
+  const titleCnt = lines.length;
   if (titleCnt) lines.push(""); // add blank line after title
   lines = lines.concat(g.wrapString(msg.body, g.getWidth()-10), ["",/*LANG*/"< Back"]);
   E.showScroller({
@@ -333,7 +333,7 @@ function showMessageSettings(msg) {
       showMessageScroller(msg);
     },
     /*LANG*/"Delete": () => {
-      MESSAGES = MESSAGES.filter(m => m.id!=msg.id);
+      MESSAGES = MESSAGES.filter(m => m.id!==msg.id);
       checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: 0});
     },
     /*LANG*/"Mark Unread": () => {
@@ -350,28 +350,28 @@ function showMessageSettings(msg) {
 }
 
 function showMessage(msgid) {
-  var msg = MESSAGES.find(m => m.id==msgid);
+  const msg = MESSAGES.find(m => m.id===msgid);
   if (updateLabelsInterval) {
     clearInterval(updateLabelsInterval);
     updateLabelsInterval = undefined;
   }
   if (!msg) return checkMessages({clockIfNoMsg: 1, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: openMusic}); // go home if no message found
-  if (msg.id=="music") {
+  if (msg.id==="music") {
     cancelReloadTimeout(); // don't auto-reload to clock now
     return showMusicMessage(msg);
   }
-  if (msg.src=="Maps") {
+  if (msg.src==="Maps") {
     cancelReloadTimeout(); // don't auto-reload to clock now
     return showMapMessage(msg);
   }
   active = "message";
   // Normal text message display
-  var title = msg.title, titleFont = fontLarge, lines;
+  let title = msg.title, titleFont = fontLarge, lines, w;
   if (title) {
-    var w = g.getWidth()-48;
+    w = g.getWidth()-48;
     if (g.setFont(titleFont).stringWidth(title)>w) {
       titleFont = fontBig;
-      if (settings.fontSize!=1 && g.setFont(titleFont).stringWidth(title)>w) {
+      if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
         titleFont = fontMedium;
       }
     }
@@ -381,18 +381,18 @@ function showMessage(msgid) {
     }
   }
   // If body of message is only two lines long w/ large font, use large font.
-  var body = msg.body, bodyFont = fontLarge;
+  let body = msg.body, bodyFont = fontLarge;
   if (body) {
-    var w = g.getWidth()-10;
+    w = g.getWidth()-10;
     if (g.setFont(bodyFont).stringWidth(body)>w*2) {
       bodyFont = fontBig;
-      if (settings.fontSize!=1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
+      if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
         bodyFont = fontMedium;
       }
     }
     if (g.setFont(bodyFont).stringWidth(body)>w) {
       lines = g.setFont(bodyFont).wrapString(msg.body, w);
-      var maxLines = Math.floor((g.getHeight()-110)/g.getFontHeight());
+      const maxLines = Math.floor((g.getHeight()-110)/g.getFontHeight());
       body = (lines.length>maxLines) ? lines.slice(0, maxLines).join("\n")+"..." : lines.join("\n");
     }
   }
@@ -401,7 +401,7 @@ function showMessage(msgid) {
     cancelReloadTimeout(); // don't auto-reload to clock now
     checkMessages({clockIfNoMsg: 1, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: openMusic});
   }
-  var buttons = [
+  const buttons = [
     {type: "btn", src: getBackImage(), cb: goBack} // back
   ];
   if (msg.positive) {
@@ -468,8 +468,10 @@ function showMessage(msgid) {
   clockIfNoMsg : bool
   clockIfAllRead : bool
   showMsgIfUnread : bool
+  openMusic : bool
 }
 */
+// noinspection BadExpressionStatementJS
 function checkMessages(options) {
   options = options || {};
   // If no messages, just show 'no messages' and return
@@ -484,17 +486,17 @@ function checkMessages(options) {
     return load();
   }
   // we have >0 messages
-  var newMessages = MESSAGES.filter(m => m.new && m.id!="music");
+  const newMessages = MESSAGES.filter(m => m.new && m.id!=="music");
   // If we have a new message, show it
   if (options.showMsgIfUnread && newMessages.length) {
     return showMessage(newMessages[0].id);
   }
   // no new messages: show playing music? (only if we have playing music to show)
-  if (options.openMusic && MESSAGES.some(m => m.id=="music" && m.track && m.state=="play")) {
+  if (options.openMusic && MESSAGES.some(m => m.id==="music" && m.track && m.state==="play")) {
     return showMessage("music");
   }
   // no new messages - go to clock?
-  if (options.clockIfAllRead && newMessages.length==0) {
+  if (options.clockIfAllRead && newMessages.length===0) {
     return load();
   }
   // we don't have to time out of this screen...
@@ -506,31 +508,32 @@ function checkMessages(options) {
     c: Math.max(MESSAGES.length+1, 3), // workaround for 2v10.219 firmware (min 3 not needed for 2v11)
     draw: function(idx, r) {
       "ram";
-      var msg = MESSAGES[idx-1];
+      let msg = MESSAGES[idx-1];
       if (msg && msg.new) {
         g.setBgColor(g.theme.bgH).setColor(g.theme.fgH);
       } else {
         g.setColor(g.theme.fg);
       }
-      if (idx==0) msg = {id: "back", title: "< Back"};
+      if (idx===0) msg = {id: "back", title: "< Back"};
       if (!msg) return;
-      var x = r.x+2, title = msg.title, body = msg.body;
-      var img = getMessageImage(msg);
-      if (msg.id=="music") {
+      let x = r.x+2, title = msg.title, body = msg.body;
+      const img = getMessageImage(msg);
+      if (msg.id==="music") {
         title = msg.artist || /*LANG*/"Music";
         body = msg.track;
       }
       if (img) {
-        var fg = g.getColor();
+        const fg = g.getColor();
         g.setColor(getMessageImageCol(msg, fg)).drawImage(img, x+24, r.y+24, {rotate: 0}) // force centering
           .setColor(fg); // only color the icon
         x += 50;
       }
-      var m = msg.title+"\n"+msg.body, longBody = false;
+      const m = msg.title+"\n"+msg.body;
+      let longBody = false;
       if (title) g.setFontAlign(-1, -1).setFont(fontBig).drawString(title, x, r.y+2);
       if (body) {
         g.setFontAlign(-1, -1).setFont("6x8");
-        var l = g.wrapString(body, r.w-(x+14));
+        let l = g.wrapString(body, r.w-(x+14));
         if (l.length>3) {
           l = l.slice(0, 3);
           l[l.length-1] += "...";
@@ -542,7 +545,7 @@ function checkMessages(options) {
       g.setColor("#888").fillRect(r.x, r.y+r.h-1, r.x+r.w-1, r.y+r.h-1); // dividing line between items
     },
     select: idx => {
-      if (idx==0) {
+      if (idx===0) {
         load();
       } else {
         showMessage(MESSAGES[idx-1].id);
@@ -562,7 +565,7 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   Bangle.loadWidgets();
   Bangle.drawWidgets();
   setTimeout(() => {
-    var unreadTimeoutSecs = settings.unreadTimeout;
+    let unreadTimeoutSecs = settings.unreadTimeout;
     if (unreadTimeoutSecs===undefined) unreadTimeoutSecs = 60;
     if (unreadTimeoutSecs) {
       unreadTimeout = setTimeout(function() {
@@ -571,7 +574,7 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
       }, unreadTimeoutSecs*1000);
     }
     // only openMusic on launch if music is new
-    var newMusic = MESSAGES.some(m => m.id==="music" && m.new);
+    const newMusic = MESSAGES.some(m => m.id==="music" && m.new);
     checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 1, openMusic: newMusic && settings.openMusic});
   }, 10); // if checkMessages wants to 'load', do that
 }

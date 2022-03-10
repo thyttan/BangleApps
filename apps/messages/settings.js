@@ -14,8 +14,8 @@
     require("Storage").writeJSON("messages.settings.json", settings);
   }
 
-  var vibPatterns = [/*LANG*/"Off", ".", "-", "--", "-.-", "---"];
-  var mainmenu = {
+  const vibPatterns = [/*LANG*/"Off", ".", "-", "--", "-.-", "---"];
+  const mainmenu = {
     "": {"title": /*LANG*/"Messages"},
     "< Back": back,
     /*LANG*/"Vibrate": {
