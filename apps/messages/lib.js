@@ -5,10 +5,13 @@
  *   {t:"remove",id:int} // remove
  *   {t:"modify",id:int, title:string} // modified
  */
+/**
+ * @returns {boolean} Do we care about music?
+ */
 function openMusic() {
   // only read settings file for first music message
-  if ("undefined"==typeof exports._openMusic) {
-    exports._openMusic = !!((require('Storage').readJSON("messages.settings.json", true) || {}).openMusic);
+  if ("undefined"== typeof exports._openMusic) {
+    exports._openMusic = !!((require("Storage").readJSON("messages.settings.json", true) || {}).openMusic);
   }
   return exports._openMusic;
 }
@@ -59,10 +62,10 @@ exports.load = function() {
  * Check if there are any unread messages
  * @returns {boolean}
  */
-exports.haveNew = function(){
-  try{
-    if ("undefined"!==typeof MESSAGES) return MESSAGES.some(e => e.new&&e.id!="music");
-    return exports.load().some(e => e.new&&e.id!="music");
+exports.haveNew = function() {
+  try {
+    if ("undefined"!== typeof MESSAGES) return MESSAGES.some(e => e.new && e.id!="music");
+    return exports.load().some(e => e.new && e.id!="music");
   } catch(e) {
     return false; // don't bother e.g. the widget with errors
   }
