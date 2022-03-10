@@ -48,8 +48,23 @@ we should start a timeout for settings.unreadTimeout to return
 to the clock. */
 var unreadTimeout;
 /// List of all our messages
-var MESSAGES = require("Storage").readJSON("messages.json",1)||[];
-if (!Array.isArray(MESSAGES)) MESSAGES=[];
+var MESSAGES;
+try {
+  MESSAGES = require("messages").load();
+  // Write them back to storage when we're done
+  E.on("kill", ()=>{ require("messages").save(MESSAGES); delete MESSAGES; });
+} catch (e) {
+  g.clear();
+  E.showPrompt(/*LANG*/"Message file corrupt, erase all messages?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
+    if (isYes) {    // OK: erase message file and reload this app
+      require("messages").save([]);
+      load("messages.app.js");
+    } else {
+      load();// well, this app won't work... let's go back to the clock
+    }
+  });
+}
+// used by lib.js to inform app of updates
 var onMessagesModified = function(msg) {
   // TODO: if new, show this new one
   if (msg && msg.id!=="music" && msg.new && !((require('Storage').readJSON('setting.json', 1) || {}).quiet)) {
@@ -62,9 +77,6 @@ var onMessagesModified = function(msg) {
   }
   showMessage(msg&&msg.id);
 };
-function saveMessages() {
-  require("Storage").writeJSON("messages.json",MESSAGES)
-}
 
 function getBackImage() {
   return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
@@ -173,7 +185,6 @@ function showMapMessage(msg) {
   Bangle.setUI("updown",function() {
     // any input to mark as not new and return to menu
     msg.new = false;
-    saveMessages();
     layout = undefined;
     checkMessages({clockIfNoMsg:1,clockIfAllRead:1,showMsgIfUnread:1,openMusic:0});
   });
@@ -207,7 +218,6 @@ function showMusicMessage(msg) {
     openMusic = false;
     var wasNew = msg.new;
     msg.new = false;
-    saveMessages();
     layout = undefined;
     if (wasNew) checkMessages({clockIfNoMsg:1,clockIfAllRead:1,showMsgIfUnread:0,openMusic:0});
     else checkMessages({clockIfNoMsg:0,clockIfAllRead:0,showMsgIfUnread:0,openMusic:0});
@@ -294,20 +304,15 @@ function showMessageSettings(msg) {
     },
     /*LANG*/"Delete" : () => {
       MESSAGES = MESSAGES.filter(m=>m.id!=msg.id);
-      saveMessages();
       checkMessages({clockIfNoMsg:0,clockIfAllRead:0,showMsgIfUnread:0,openMusic:0});
     },
     /*LANG*/"Mark Unread" : () => {
       msg.new = true;
-      saveMessages();
       checkMessages({clockIfNoMsg:0,clockIfAllRead:0,showMsgIfUnread:0,openMusic:0});
     },
     /*LANG*/"Delete all messages" : () => {
       E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
-        if (isYes) {
-          MESSAGES = [];
-          saveMessages();
-        }
+        if (isYes) require('messages').clearAll();
         checkMessages({clockIfNoMsg:0,clockIfAllRead:0,showMsgIfUnread:0,openMusic:0});
       });
     },
@@ -360,7 +365,7 @@ function showMessage(msgid) {
     }
   }
   function goBack() {
-    msg.new = false; saveMessages(); // read mail
+    msg.new = false; // read mail
     cancelReloadTimeout(); // don't auto-reload to clock now
     checkMessages({clockIfNoMsg:1,clockIfAllRead:0,showMsgIfUnread:0,openMusic:openMusic});
   }
@@ -370,7 +375,7 @@ function showMessage(msgid) {
   if (msg.positive) {
     buttons.push({fillx:1});
     buttons.push({type:"btn", src:getPosImage(), cb:()=>{
-      msg.new = false; saveMessages();
+      msg.new = false;
       cancelReloadTimeout(); // don't auto-reload to clock now
       Bangle.messageResponse(msg,true);
       checkMessages({clockIfNoMsg:1,clockIfAllRead:1,showMsgIfUnread:1,openMusic:openMusic});
@@ -379,7 +384,7 @@ function showMessage(msgid) {
   if (msg.negative) {
     buttons.push({fillx:1});
     buttons.push({type:"btn", src:getNegImage(), cb:()=>{
-      msg.new = false; saveMessages();
+      msg.new = false;
       cancelReloadTimeout(); // don't auto-reload to clock now
       Bangle.messageResponse(msg,false);
       checkMessages({clockIfNoMsg:1,clockIfAllRead:1,showMsgIfUnread:1,openMusic:openMusic});
@@ -494,19 +499,20 @@ function cancelReloadTimeout() {
   unreadTimeout = undefined;
 }
 
-
-g.clear();
-Bangle.loadWidgets();
-Bangle.drawWidgets();
-setTimeout(() => {
-  var unreadTimeoutSecs = settings.unreadTimeout;
-  if (unreadTimeoutSecs===undefined) unreadTimeoutSecs=60;
-  if (unreadTimeoutSecs)
-    unreadTimeout = setTimeout(function() {
-      print("Message not seen - reloading");
-      load();
-    }, unreadTimeoutSecs*1000);
-  // only openMusic on launch if music is new
-  var newMusic = MESSAGES.some(m=>m.id==="music"&&m.new);
-  checkMessages({clockIfNoMsg:0,clockIfAllRead:0,showMsgIfUnread:1,openMusic:newMusic&&settings.openMusic});
-},10); // if checkMessages wants to 'load', do that
+if (MESSAGES !== undefined) { // only if loading MESSAGES worked
+  g.clear();
+  Bangle.loadWidgets();
+  Bangle.drawWidgets();
+  setTimeout(() => {
+    var unreadTimeoutSecs = settings.unreadTimeout;
+    if (unreadTimeoutSecs===undefined) unreadTimeoutSecs=60;
+    if (unreadTimeoutSecs)
+      unreadTimeout = setTimeout(function() {
+        print("Message not seen - reloading");
+        load();
+      }, unreadTimeoutSecs*1000);
+    // only openMusic on launch if music is new
+    var newMusic = MESSAGES.some(m=>m.id==="music"&&m.new);
+    checkMessages({clockIfNoMsg:0,clockIfAllRead:0,showMsgIfUnread:1,openMusic:newMusic&&settings.openMusic});
+  },10); // if checkMessages wants to 'load', do that
+}

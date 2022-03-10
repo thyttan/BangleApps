@@ -49,6 +49,5 @@ draw:function() {
 message but then the watch was never viewed. In that case we don't
 want to buzz but should still show that there are unread messages. */
 if (global.MESSAGES===undefined) (function() {
-  var messages = require("Storage").readJSON("messages.json",1)||[];
-  if (messages.some(m=>m.new&&m.id!="music")) WIDGETS["messages"].show(true);
+  if (require("messages").haveNew()) WIDGETS["messages"].show(true);
 })();
