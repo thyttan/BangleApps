@@ -19,3 +19,10 @@ GB({"t":"weather","temp":288,"hum":94,"txt":"Light rain","wind":0,"wdir":120,"lo
 
 // Nextcloud updated a file
 GB({"t":"notify","id":1594184421,"src":"Nextcloud","title":"Downloaded","body":"test.file downloaded"})
+
+// Map
+GB({"t":"notify","id":1,"src":"Maps","title":"0 yd - High St","body":"Campton - 11:48 ETA","img":"GhqBAAAMAAAHgAAD8AAB/gAA/8AAf/gAP/8AH//gD/98B//Pg/4B8f8Afv+PP//n3/f5//j+f/wfn/4D5/8Aef+AD//AAf/gAD/wAAf4AAD8AAAeAAADAAA="})
+
+// Incoming call
+GB({"t":"call","cmd":"incoming","name":"Bob","number":"12421312"})
+GB({"t":"call","cmd":"end","name":"Bob","number":"12421312"})

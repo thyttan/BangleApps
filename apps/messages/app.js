@@ -20,14 +20,15 @@
 {"t":"add","id":"call","src":"Phone","name":"Bob","number":"12421312",positive:true,negative:true}
 */
 
+const B2 = process.env.HWVERSION>1;
 const Layout = require("Layout");
-const settings = require("Storage").readJSON("messages.settings.json", true) || {};
+let settings = require("Storage").readJSON("messages.settings.json", true) || {};
 const fontSmall = "6x8";
 const fontMedium = g.getFonts().includes("6x15") ? "6x15" : "6x8:2";
 const fontBig = g.getFonts().includes("12x20") ? "12x20" : "6x8:2";
 const fontLarge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
 let active; // active screen
-let openMusic = false; // go back to music screen after we handle something else?
+let openMusic = false, openMap = false; // go back to map/music screen after we handle something else?
 // hack for 2v10 firmware's lack of ':size' font handling
 try {
   g.setFont("6x8:2");
@@ -53,6 +54,7 @@ try {
   MESSAGES = require("messages").load();
   // Write them back to storage when we're done
   E.on("kill", () => {
+    MESSAGES.forEach(m => delete m.h); // we don't want this in storage
     require("messages").save(MESSAGES);
     delete MESSAGES;
   });
@@ -68,22 +70,48 @@ try {
   });
 }
 // used by lib.js to inform app of updates
-const onMessagesModified = function(msg) {
-  // TODO: if new, show this new one
-  if (msg && msg.id!=="music" && msg.new && !((require("Storage").readJSON("setting.json", 1) || {}).quiet)) {
-    if (WIDGETS["messages"]) {
-      WIDGETS["messages"].buzz();
-    } else {
-      Bangle.buzz();
-    }
+function onCall(event) {
+  if (event.t==="remove") {
+    call = undefined;
+    if (active==="call") showMain();
+  } else {
+    call = event;
+    showCall();
   }
-  if (msg && msg.id==="music") {
-    if (msg.state && msg.state!=="play") openMusic = false; // no longer playing music to go back to
-    if (active!=="music") return; // don't open music over other screens
+}
+function onMusic(event) {
+  const hadMusic = !!music;
+  music = Object.assign(music || {}, event);
+  if (active==="music") showMusic();
+  else if (active==="menu" && !hadMusic) showMenu();
+}
+function onMap(event) {
+  const hadMap = !!map;
+  if (event.t==="remove") {
+    map = undefined;
+    if (active==="map") showMain();
+    else if (active==="menu" && hadMap) showMenu();
+  } else {
+    map = event;
+    if (["map", "music"].includes(active)) showMap();
+    else if (active==="menu" && !hadMap) showMenu();
   }
-  showMessage(msg && msg.id);
+}
+const onMessages = function(idxs) {
+  if (!idxs.some(i => MESSAGES[i]) && active!=="messages") return; // nothing to show
+  if (idxs.some(i => MESSAGES[i] && MESSAGES[i].new) && !((require("Storage").readJSON("setting.json", 1) || {}).quiet)) {
+    if (WIDGETS["messages"]) WIDGETS["messages"].buzz();
+    else Bangle.buzz();
+  }
+  if (active==="call") return;
+  // show modified messages, followed by any other new messages
+  const unread = MESSAGES.filter((m, i) => m && m.new && !idxs.includes(i)).map((m, i) => i);
+  showMessages(idxs.filter(i => MESSAGES[i]).concat(unread));
 };
 
+function getMusicImage() {
+  return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
+}
 function getBackImage() {
   return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
 }
@@ -125,7 +153,7 @@ function getMessageImage(msg) {
   if (s==="telegram") return atob("GBiBAAAAAAAAAAAAAAAAAwAAHwAA/wAD/wAf3gD/Pgf+fh/4/v/z/P/H/D8P/Acf/AM//AF/+AF/+AH/+ADz+ADh+ADAcAAAMAAAAA==");
   if (s==="whatsapp") return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
   if (s==="wordfeud") return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
-  if (msg.id==="music") return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
+  if (msg.id==="music") return getMusicImage();
   if (msg.id==="back") return getBackImage();
   return getNotificationImage();
 }
@@ -158,23 +186,24 @@ function getMessageImageCol(msg, def) {
   }[(msg.src || "").toLowerCase()] || (def!==undefined ? def : g.theme.fg);
 }
 
-function showMapMessage(msg) {
+function showMap() {
+  clearStuff();
   active = "map";
-  let m;
-  let distance, street, target, eta;
-  m = msg.title.match(/(.*) - (.*)/);
+  openMap = true;
+  let m, distance, street, target, eta;
+  m = map.title.match(/(.*) - (.*)/);
   if (m) {
     distance = m[1];
     street = m[2];
   } else {
-    street = msg.title;
+    street = map.title;
   }
-  m = msg.body.match(/(.*) - (.*)/);
+  m = map.body.match(/(.*) - (.*)/);
   if (m) {
     target = m[1];
     eta = m[2];
   } else {
-    target = msg.body;
+    target = map.body;
   }
   let layout = new Layout({
     type: "v", c: [
@@ -187,7 +216,7 @@ function showMapMessage(msg) {
       },
       {
         type: "h", fillx: 1, filly: 1, c: [
-          msg.img ? {type: "img", src: atob(msg.img), scale: 2} : {},
+          map.img ? {type: "img", src: atob(map.img), scale: 2} : {},
           {
             type: "v", fillx: 1, c: [
               {type: "txt", font: fontLarge, label: distance || ""}
@@ -198,20 +227,40 @@ function showMapMessage(msg) {
       {type: "txt", font: "6x8:2", label: eta}
     ]
   });
-  g.clearRect(Bangle.appRect);
   layout.render();
-  Bangle.setUI("updown", function() {
-    // any input to mark as not new and return to menu
-    msg.new = false;
-    layout = undefined;
-    checkMessages({clockIfNoMsg: 1, clockIfAllRead: 1, showMsgIfUnread: 1, openMusic: 0});
+  // go back to menu on any input
+  let goBack = () => {
+    openMap = false;
+    showMenu();
+  };
+  Bangle.setUI({
+    mode: "custom",
+    back: goBack,
+    btn: goBack,
+    swipe: goBack,
   });
 }
 
 let updateLabelsInterval;
-function showMusicMessage(msg) {
+function toggleMusic() {
+  const mc = cmd => {
+    if (Bangle.musicControl) Bangle.musicControl(cmd);
+  };
+  if (!music) {
+    music = {state: "play"};
+    mc("play");
+  } else if (music.state==="play") {
+    music.state = "pause";
+    mc("pause");
+  } else {
+    music.state = "play";
+    mc("play");
+  }
+}
+function showMusic() {
   active = "music";
-  openMusic = msg.state==="play";
+  clearStuff();
+  openMusic = music.state==="play";
   let trackScrollOffset = 0;
   let artistScrollOffset = 0;
   let albumScrollOffset = 0;
@@ -229,31 +278,18 @@ function showMusicMessage(msg) {
     return text.substring(offset, offset+sliceLength).padEnd(maxLen, " ");
   }
 
-  function back() {
-    clearInterval(updateLabelsInterval);
-    updateLabelsInterval = undefined;
-    openMusic = false;
-    const wasNew = msg.new;
-    msg.new = false;
-    layout = undefined;
-    if (wasNew) {
-      checkMessages({clockIfNoMsg: 1, clockIfAllRead: 1, showMsgIfUnread: 0, openMusic: 0});
-    } else {
-      checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: 0});
-    }
-  }
   function updateLabels() {
-    trackName = reduceStringAndPad(msg.track, trackScrollOffset, 13);
-    artistName = reduceStringAndPad(msg.artist, artistScrollOffset, 21);
-    albumName = reduceStringAndPad(msg.album, albumScrollOffset, 21);
+    trackName = reduceStringAndPad(music.track, trackScrollOffset, 13);
+    artistName = reduceStringAndPad(music.artist, artistScrollOffset, 21);
+    albumName = reduceStringAndPad(music.album, albumScrollOffset, 21);
 
     trackScrollOffset++;
     artistScrollOffset++;
     albumScrollOffset++;
 
-    if ((trackScrollOffset+13)>msg.track.length) trackScrollOffset = 0;
-    if ((artistScrollOffset+21)>msg.artist.length) artistScrollOffset = 0;
-    if ((albumScrollOffset+21)>msg.album.length) albumScrollOffset = 0;
+    if ((trackScrollOffset+13)>music.track.length) trackScrollOffset = 0;
+    if ((artistScrollOffset+21)>music.artist.length) artistScrollOffset = 0;
+    if ((albumScrollOffset+21)>music.album.length) albumScrollOffset = 0;
   }
   updateLabels();
 
@@ -261,28 +297,40 @@ function showMusicMessage(msg) {
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
-          {type: "btn", src: getBackImage, cb: back},
+          {type: "img", pad: 10, bgCol: g.theme.bg2, col: g.theme.fg2, src: getMusicImage},
           {
             type: "v", fillx: 1, c: [
-              {type: "txt", font: fontMedium, bgCol: g.theme.bg2, label: artistName, pad: 2, id: "artist"},
-              {type: "txt", font: fontMedium, bgCol: g.theme.bg2, label: albumName, pad: 2, id: "album"}
+              {type: "txt", font: fontMedium, col: g.theme.fg2, bgCol: g.theme.bg2, label: artistName, pad: 2, id: "artist"},
+              {type: "txt", font: fontMedium, col: g.theme.fg2, bgCol: g.theme.bg2, label: albumName, pad: 2, id: "album"}
             ]
           }
         ]
       },
       {type: "txt", font: fontLarge, bgCol: g.theme.bg, label: trackName, fillx: 1, filly: 1, pad: 2, id: "track"},
-      Bangle.musicControl ? {
-        type: "h", fillx: 1, c: [
-          {type: "btn", pad: 8, label: "\0"+atob("FhgBwAADwAAPwAA/wAD/gAP/gA//gD//gP//g///j///P//////////P//4//+D//gP/4A/+AD/gAP8AA/AADwAAMAAA"), cb: () => Bangle.musicControl("play")}, // play
-          {type: "btn", pad: 8, label: "\0"+atob("EhaBAHgHvwP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP/wP3gHg"), cb: () => Bangle.musicControl("pause")}, // pause
-          {type: "btn", pad: 8, label: "\0"+atob("EhKBAMAB+AB/gB/wB/8B/+B//B//x//5//5//x//B/+B/8B/wB/gB+AB8ABw"), cb: () => Bangle.musicControl("next")}, // next
-        ]
-      } : {},
-      {type: "txt", font: "6x8:2", label: msg.dur ? fmtTime(msg.dur) : "--:--"}
+      {type: "txt", font: fontMedium, bgCol: g.theme.bg, label: music.dur ? fmtTime(music.dur) : "--:--"}
     ]
   });
-  g.clearRect(Bangle.appRect);
   layout.render();
+  const goBack = () => {
+    openMusic = false;
+    showMenu();
+  };
+  Bangle.setUI({
+    mode: "updown",
+    back: B2 ? () => goBack() : undefined,
+  }, ud => {
+    if (!Bangle.musicControl) return;
+    if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
+    else toggleMusic();
+  });
+  Bangle.swipeHandler = dir => {
+    if (dir===1) goBack();
+    if (dir=== -1 && Bangle.musicControl) {
+      Bangle.buzz(20);
+      Bangle.musicControl("next");
+    }
+  };
+  Bangle.on("swipe", Bangle.swipeHandler);
 
   updateLabelsInterval = setInterval(function() {
     updateLabels();
@@ -293,80 +341,317 @@ function showMusicMessage(msg) {
   }, 400);
 }
 
-function showMessageScroller(msg) {
-  active = "scroller";
-  const bodyFont = fontBig;
-  g.setFont(bodyFont);
-  let lines = [];
-  if (msg.title) lines = g.wrapString(msg.title, g.getWidth()-10);
-  const titleCnt = lines.length;
-  if (titleCnt) lines.push(""); // add blank line after title
-  lines = lines.concat(g.wrapString(msg.body, g.getWidth()-10), ["",/*LANG*/"< Back"]);
-  E.showScroller({
-    h: g.getFontHeight(), // height of each menu item in pixels
-    c: lines.length, // number of menu items
-    // a function to draw a menu item
-    draw: function(idx, r) {
-      // FIXME: in 2v13 onwards, clearRect(r) will work fine. There's a bug in 2v12
-      g.setBgColor(idx<titleCnt ? g.theme.bg2 : g.theme.bg).setColor(idx<titleCnt ? g.theme.fg2 : g.theme.fg).clearRect(r.x, r.y, r.x+r.w, r.y+r.h);
-      g.setFont(bodyFont).drawString(lines[idx], r.x, r.y);
-    }, select: function(idx) {
-      if (idx>=lines.length-2) {
-        showMessage(msg.id);
-      }
-    }
+let layout;
+function clearStuff() {
+  delete Bangle.appRect;
+  layout = undefined;
+  Bangle.setUI();
+  ["touch", "drag", "swipe"].forEach(l => Bangle.removeAllListeners(l));
+  if (unreadTimeout) clearTimeout(unreadTimeout);
+  unreadTimeout = undefined;
+  if (updateLabelsInterval) clearInterval(updateLabelsInterval);
+  updateLabelsInterval = undefined;
+  g.clearRect(Bangle.appRect);
+}
+function showMain() {
+  if (map && openMap) showMap();
+  else if (music && openMusic) showMusic();
+  else showMenu();
+}
+function showMenu() {
+  active = "menu";
+  clearStuff();
+  let menu = {
+    "": {title:/*LANG*/"Messages"},
+    /*LANG*/"< Back": () => load(),
+  };
+  if (call) menu[/*LANG*/"Incoming call"] = () => showCall();
+  const unread = MESSAGES.filter(m => m.new);
+  if (unread.length) menu[unread.length+" "+/*LANG*/"New"] = () => showMessages(unread.map((m, i) => i));
+  if (MESSAGES.length) menu[/*LANG*/"All "+` (${MESSAGES.length})`] = () => showMessages(MESSAGES.map((m, i) => i));
+  else menu[/*LANG*/"No Messages"] = () => showMessages(MESSAGES.map((m, i) => i));
+  if (map) menu[/*LANG*/"Map"] = () => showMap();
+  if (music) menu[/*LANG*/"Music"] = () => showMusic();
+  menu[/*LANG*/"Settings"] = () => showSettings();
+  E.showMenu(menu);
+}
+function showSettings() {
+  active = "settings";
+  eval(require("Storage").read("messages.settings.js"))(() => {
+    settings = require("Storage").readJSON("messages.settings.json", true) || {};
+    MESSAGES.forEach(m => delete m.h); // in case font size changed
+    showMenu();
   });
-  // ensure button-press on Bangle.js 2 takes us back
-  if (process.env.HWVERSION>1) {
-    Bangle.btnWatches = [
-      setWatch(() => showMessage(msg.id), BTN1, {repeat: 1, edge: "falling"})
+}
+function showCall() {
+  active = "call";
+  clearStuff();
+  // Normal text message display
+  let title = call.title, titleFont = fontLarge, lines, w;
+  w = g.getWidth()-48;
+  if (g.setFont(titleFont).stringWidth(title)>w) {
+    titleFont = fontBig;
+    if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
+      titleFont = fontMedium;
+    }
+  }
+  if (g.setFont(titleFont).stringWidth(title)>w) {
+    lines = g.wrapString(title, w);
+    title = (lines.length>2) ? lines.slice(0, 2).join("\n")+"..." : lines.join("\n");
+  }
+  // If body of message is only two lines long w/ large font, use large font.
+  let body = call.body, bodyFont = fontLarge;
+  w = g.getWidth()-10;
+  if (g.setFont(bodyFont).stringWidth(body)>w*2) {
+    bodyFont = fontBig;
+    if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
+      bodyFont = fontMedium;
+    }
+  }
+  if (g.setFont(bodyFont).stringWidth(body)>w) {
+    lines = g.setFont(bodyFont).wrapString(call.body, w);
+    const maxLines = Math.floor((g.getHeight()-110)/g.getFontHeight());
+    body = (lines.length>maxLines) ? lines.slice(0, maxLines).join("\n")+"..." : lines.join("\n");
+  }
+  function respond(accept) {
+    Bangle.buzz(20);
+    Bangle.messageResponse(call, accept);
+    call = undefined;
+    showMain();
+  }
+  let options = {};
+  if (!B2) {
+    options.btns = [
+      {
+        label:/*LANG*/"accept",
+        cb: () => respond(true),
+      }, {
+        label:/*LANG*/"ignore",
+        cb: () => showMain(),
+      }, {
+        label:/*LANG*/"reject",
+        cb: () => respond(false),
+      }
     ];
   }
-}
 
-function showMessageSettings(msg) {
-  active = "settings";
-  E.showMenu({
-    "": {"title":/*LANG*/"Message"},
-    "< Back": () => showMessage(msg.id),
-    /*LANG*/"View Message": () => {
-      showMessageScroller(msg);
+  layout = new Layout({
+    type: "v", c: [
+      {
+        type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
+          {type: "img", pad: 10, src: getMessageImage(call), col: getMessageImageCol(call)},
+          {
+            type: "v", fillx: 1, c: [
+              {type: "txt", font: fontSmall, label: call.src ||/*LANG*/"Message", bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2, halign: 1},
+              title ? {type: "txt", font: titleFont, label: title, bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2} : {},
+            ]
+          },
+        ]
+      },
+      {type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2},
+      {
+        type: "h", fillx: 1, c: [
+          {type: B2 ? "btn" : "img", src: getPosImage(), cb: () => respond(true)},
+          {fillx: 1},
+          {type: B2 ? "btn" : "img", src: getNegImage(), cb: () => respond(false)}
+        ]
+      }
+    ]
+  }, options);
+  layout.render();
+  Bangle.setUI({
+    mode: "custom",
+    back: () => showMain(),
+    swipe: dir => {if (dir===1) showMenu();},
+    touch: side => {
+      if (side===1) respond(true);
+      if (side===2) respond(false);
     },
-    /*LANG*/"Delete": () => {
-      MESSAGES = MESSAGES.filter(m => m.id!==msg.id);
-      checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: 0});
-    },
-    /*LANG*/"Mark Unread": () => {
-      msg.new = true;
-      checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: 0});
-    },
-    /*LANG*/"Delete all messages": () => {
-      E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
-        if (isYes) require("messages").clearAll();
-        checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: 0});
-      });
-    },
+    btn: b => {
+      if (B2 || b===2) showMenu();
+      else if (b===1) respond(true);
+      else respond(false);
+    }
   });
 }
+function getMessageHeight(msg) {
+  if (msg.h) return msg.h;
+  let h = 0;
+  // header:
+  let w = g.getWidth()-48; // room for icon
+  let title = msg.title, titleFont = fontLarge;
+  if (g.setFont(titleFont).stringWidth(title)>w) {
+    titleFont = fontBig;
+    if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
+      titleFont = fontMedium;
+    }
+  }
+  let lines = g.setFont(titleFont).wrapString(title, w);
+  h += Math.max(48, g.stringMetrics(lines.join("\n")).height); // at least icon height
 
-function showMessage(msgid) {
-  const msg = MESSAGES.find(m => m.id===msgid);
-  if (updateLabelsInterval) {
-    clearInterval(updateLabelsInterval);
-    updateLabelsInterval = undefined;
+  // body:
+  w = g.getWidth()-10;
+  let body = msg.body, bodyFont = fontLarge;
+  if (g.setFont(bodyFont).stringWidth(body)>w*2) {
+    bodyFont = fontBig;
+    if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
+      bodyFont = fontMedium;
+    }
   }
-  if (!msg) return checkMessages({clockIfNoMsg: 1, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: openMusic}); // go home if no message found
-  if (msg.id==="music") {
-    cancelReloadTimeout(); // don't auto-reload to clock now
-    return showMusicMessage(msg);
+  lines = g.setFont(bodyFont).wrapString(body, w);
+  h += g.stringMetrics(lines.join("\n")).height;
+
+  // remember for next time
+  msg.h = h;
+
+  return h;
+}
+function showMessages(idxs) {
+  clearStuff();
+  active = "messages";
+  if (!idxs.length) {
+    return E.showPrompt(/*LANG*/"No Messages", {
+      title:/*LANG*/"Messages",
+      img: require("heatshrink").decompress(atob("kkk4UBrkc/4AC/tEqtACQkBqtUDg0VqAIGgoZFDYQIIM1sD1QAD4AIBhnqA4WrmAIBhc6BAWs8AIBhXOBAWz0AIC2YIC5wID1gkB1c6BAYFBEQPqBAYXBEQOqBAnDAIQaEnkAngaEEAPDFgo+IKA5iIOhCGIAFb7RqAIGgtUBA0VqobFgNVA")),
+      buttons: {/*LANG*/"Ok": 1}
+    }).then(() => { showMenu(); });
   }
-  if (msg.src==="Maps") {
-    cancelReloadTimeout(); // don't auto-reload to clock now
-    return showMapMessage(msg);
-  }
-  active = "message";
+  let n, // message number of idxs
+    idx, // index of message in MESSAGES
+    msg, // the actual message
+    h,   // message height
+    offset, oldOffset;
+  const ar = Bangle.appRect;
+  const move = (dy) => {
+    moving = true; // prevent scrolling right into next/prev message
+    offset = Math.max(0, Math.min(h-ar.h, offset+dy));
+    dy = oldOffset-offset;
+    function offsetRecurser(l) {
+      if (l.y) l.y += dy;
+      if (l.c) l.c.forEach(offsetRecurser);
+    }
+    offsetRecurser(layout.l);
+    oldOffset = offset;
+    draw();
+  };
+  const draw = () => {
+    g.clearRect(ar).setClipRect(ar.x, ar.y, ar.x2, ar.y2);
+    g.reset = () => { // stop Layout resetting ClipRect
+      g.setColor(g.theme.fg).setBgColor(g.theme.bg);
+    };
+    // move all elements to new offset
+    layout.render();
+    delete g.reset;
+  };
+  let buzzing = false, moving = false;
+  const buzzOnce = () => {
+    if (buzzing) return;
+    buzzing = true;
+    Bangle.buzz(40).then(() => setTimeout(() => {buzzing = false;}, 500));
+  };
+  const showMsg = num => {
+    n = num;
+    idx = idxs[n];
+    msg = MESSAGES[idx];
+    h = Math.max(getMessageHeight(msg), ar.h);
+    offset = 0;
+    oldOffset = 0;
+    layout = getMessageLayout(msg, idxs.length>1 ? `${n+1}/${idxs.length}` : "");
+    // lie to Layout library about available space
+    Bangle.appRect = Object.assign({}, ar, {h: h, y2: ar.y+h-1});
+    layout.update();
+    delete Bangle.appRect;
+    let askDelete = () => {
+      E.showPrompt(/*LANG*/"Delete message?").then(confirm => {
+        if (!confirm) return showMsg(n);
+        Bangle.messageResponse(msg, false);
+        MESSAGES.splice(idx, 1);
+        idxs.splice(n, 1);
+        if (idxs.length<1) showMenu(); // no more messages
+        else if (n<idxs.length) showMsg(n); // next message took this one's place
+        else showMsg(n-1); // deleted last message
+      });
+    };
+    draw();
+    if (!B2) {
+      Bangle.setUI("updown", dir => {
+        delete msg.new;
+        const STEP = 50;
+        if (dir=== -1) { // up
+          if (h>ar.h && offset<h-ar.h) {
+            move(+STEP);
+          } else if (n<idxs.length-1) { // bottom reached: show next
+            Bangle.buzz(30);
+            showMsg(n+1);
+          } else {
+            buzzOnce();
+          }
+        } else if (dir===1) { // down
+          if (offset>0) {
+            move(-STEP);
+          } else if (n>0) { // top reached: show prev
+            Bangle.buzz(30);
+            showMsg(n-1);
+          } else {
+            buzzOnce();
+          }
+        } else { // middle button
+          showMessageMenu();
+        }
+      });
+    } else {
+      Bangle.setUI({
+        mode: "custom",
+        back: () => showMain(),
+        swipe: dir => {
+          delete msg.new;
+          if (dir===1) showMenu();
+          else if (dir=== -1) {
+            Bangle.buzz(30);
+            askDelete();
+          }
+        },
+        touch: side => {
+          delete msg.new;
+          showMessageMenu();
+        },
+        drag: e => {
+          delete msg.new;
+          const dy = e.dy;
+          if (dy<0) { // up
+            if (h>ar.h && offset<h-ar.h) {
+              move(-dy);
+            } else if (n<idxs.length-1) { // bottom reached: show next
+              if (!moving) { // don't scroll right through to next message
+                Bangle.buzz(30);
+                showMsg(n+1);
+              }
+            } else {
+              buzzOnce();
+            }
+          } else if (dy>0) {// down
+            if (offset>0) {
+              move(-dy);
+            } else if (n>0) { // top reached: show prev
+              if (!moving) { // don't scroll right through to previous message
+                Bangle.buzz(30);
+                showMsg(n-1);
+              }
+            } else {
+              buzzOnce();
+            }
+          }
+          if (!e.b) moving = false; // touch stopped: we can swipe to another message (if we reached the top/bottom)
+        }
+      });
+    }
+  };
+  showMsg(0);
+}
+
+function getMessageLayout(msg, footer) {
   // Normal text message display
-  let title = msg.title, titleFont = fontLarge, lines, w;
+  let title = msg.title, titleFont = fontLarge, w;
   if (title) {
     w = g.getWidth()-48;
     if (g.setFont(titleFont).stringWidth(title)>w) {
@@ -376,8 +661,7 @@ function showMessage(msgid) {
       }
     }
     if (g.setFont(titleFont).stringWidth(title)>w) {
-      lines = g.wrapString(title, w);
-      title = (lines.length>2) ? lines.slice(0, 2).join("\n")+"..." : lines.join("\n");
+      title = g.wrapString(title, w).join("\n");
     }
   }
   // If body of message is only two lines long w/ large font, use large font.
@@ -391,52 +675,15 @@ function showMessage(msgid) {
       }
     }
     if (g.setFont(bodyFont).stringWidth(body)>w) {
-      lines = g.setFont(bodyFont).wrapString(msg.body, w);
-      const maxLines = Math.floor((g.getHeight()-110)/g.getFontHeight());
-      body = (lines.length>maxLines) ? lines.slice(0, maxLines).join("\n")+"..." : lines.join("\n");
+      body = g.setFont(bodyFont).wrapString(msg.body, w).join("\n");
     }
-  }
-  function goBack() {
-    msg.new = false; // read mail
-    cancelReloadTimeout(); // don't auto-reload to clock now
-    checkMessages({clockIfNoMsg: 1, clockIfAllRead: 0, showMsgIfUnread: 0, openMusic: openMusic});
-  }
-  const buttons = [
-    {type: "btn", src: getBackImage(), cb: goBack} // back
-  ];
-  if (msg.positive) {
-    buttons.push({fillx: 1});
-    buttons.push({
-      type: "btn", src: getPosImage(), cb: () => {
-        msg.new = false;
-        cancelReloadTimeout(); // don't auto-reload to clock now
-        Bangle.messageResponse(msg, true);
-        checkMessages({clockIfNoMsg: 1, clockIfAllRead: 1, showMsgIfUnread: 1, openMusic: openMusic});
-      }
-    });
-  }
-  if (msg.negative) {
-    buttons.push({fillx: 1});
-    buttons.push({
-      type: "btn", src: getNegImage(), cb: () => {
-        msg.new = false;
-        cancelReloadTimeout(); // don't auto-reload to clock now
-        Bangle.messageResponse(msg, false);
-        checkMessages({clockIfNoMsg: 1, clockIfAllRead: 1, showMsgIfUnread: 1, openMusic: openMusic});
-      }
-    });
   }
 
   layout = new Layout({
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
-          {
-            type: "btn", src: getMessageImage(msg), col: getMessageImageCol(msg), pad: 3, cb: () => {
-              cancelReloadTimeout(); // don't auto-reload to clock now
-              showMessageSettings(msg);
-            }
-          },
+          {type: "img", pad: 10, src: getMessageImage(msg), col: getMessageImageCol(msg)},
           {
             type: "v", fillx: 1, c: [
               {type: "txt", font: fontSmall, label: msg.src ||/*LANG*/"Message", bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2, halign: 1},
@@ -445,126 +692,38 @@ function showMessage(msgid) {
           },
         ]
       },
-      {
-        type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2, cb: () => {
-          // allow tapping to show a larger version
-          showMessageScroller(msg);
-        }
-      },
-      {type: "h", fillx: 1, c: buttons}
+      {type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2},
+      footer ? {type: "txt", font: fontSmall, label: footer} : {},
     ]
   });
-  g.clearRect(Bangle.appRect);
-  layout.render();
-  // ensure button-press on Bangle.js 2 takes us back
-  if (process.env.HWVERSION>1) {
-    Bangle.btnWatches = [
-      setWatch(goBack, BTN1, {repeat: 1, edge: "falling"})
-    ];
-  }
+  return layout;
 }
 
-/* options = {
-  clockIfNoMsg : bool
-  clockIfAllRead : bool
-  showMsgIfUnread : bool
-  openMusic : bool
-}
-*/
-// noinspection BadExpressionStatementJS
-function checkMessages(options) {
-  options = options || {};
-  // If no messages, just show 'no messages' and return
-  if (!MESSAGES.length) {
-    if (!options.clockIfNoMsg) {
-      return E.showPrompt(/*LANG*/"No Messages", {
-        title:/*LANG*/"Messages",
-        img: require("heatshrink").decompress(atob("kkk4UBrkc/4AC/tEqtACQkBqtUDg0VqAIGgoZFDYQIIM1sD1QAD4AIBhnqA4WrmAIBhc6BAWs8AIBhXOBAWz0AIC2YIC5wID1gkB1c6BAYFBEQPqBAYXBEQOqBAnDAIQaEnkAngaEEAPDFgo+IKA5iIOhCGIAFb7RqAIGgtUBA0VqobFgNVA")),
-        buttons: {/*LANG*/"Ok": 1}
-      }).then(() => { load(); });
-    }
-    return load();
-  }
-  // we have >0 messages
-  const newMessages = MESSAGES.filter(m => m.new && m.id!=="music");
-  // If we have a new message, show it
-  if (options.showMsgIfUnread && newMessages.length) {
-    return showMessage(newMessages[0].id);
-  }
-  // no new messages: show playing music? (only if we have playing music to show)
-  if (options.openMusic && MESSAGES.some(m => m.id==="music" && m.track && m.state==="play")) {
-    return showMessage("music");
-  }
-  // no new messages - go to clock?
-  if (options.clockIfAllRead && newMessages.length===0) {
-    return load();
-  }
-  // we don't have to time out of this screen...
-  cancelReloadTimeout();
-  active = "main";
-  // Otherwise show a menu
-  E.showScroller({
-    h: 48,
-    c: Math.max(MESSAGES.length+1, 3), // workaround for 2v10.219 firmware (min 3 not needed for 2v11)
-    draw: function(idx, r) {
-      "ram";
-      let msg = MESSAGES[idx-1];
-      if (msg && msg.new) {
-        g.setBgColor(g.theme.bgH).setColor(g.theme.fgH);
-      } else {
-        g.setColor(g.theme.fg);
-      }
-      if (idx===0) msg = {id: "back", title: "< Back"};
-      if (!msg) return;
-      let x = r.x+2, title = msg.title, body = msg.body;
-      const img = getMessageImage(msg);
-      if (msg.id==="music") {
-        title = msg.artist || /*LANG*/"Music";
-        body = msg.track;
-      }
-      if (img) {
-        const fg = g.getColor();
-        g.setColor(getMessageImageCol(msg, fg)).drawImage(img, x+24, r.y+24, {rotate: 0}) // force centering
-          .setColor(fg); // only color the icon
-        x += 50;
-      }
-      const m = msg.title+"\n"+msg.body;
-      let longBody = false;
-      if (title) g.setFontAlign(-1, -1).setFont(fontBig).drawString(title, x, r.y+2);
-      if (body) {
-        g.setFontAlign(-1, -1).setFont("6x8");
-        let l = g.wrapString(body, r.w-(x+14));
-        if (l.length>3) {
-          l = l.slice(0, 3);
-          l[l.length-1] += "...";
-        }
-        longBody = l.length>2;
-        g.drawString(l.join("\n"), x+10, r.y+20);
-      }
-      if (!longBody && msg.src) g.setFontAlign(1, 1).setFont("6x8").drawString(msg.src, r.x+r.w-2, r.y+r.h-2);
-      g.setColor("#888").fillRect(r.x, r.y+r.h-1, r.x+r.w-1, r.y+r.h-1); // dividing line between items
-    },
-    select: idx => {
-      if (idx===0) {
-        load();
-      } else {
-        showMessage(MESSAGES[idx-1].id);
-      }
-    }
-  });
-}
-
-function cancelReloadTimeout() {
-  if (!unreadTimeout) return;
-  clearTimeout(unreadTimeout);
-  unreadTimeout = undefined;
-}
-
+let call, music, map;
 if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   g.clear();
   Bangle.loadWidgets();
   Bangle.drawWidgets();
-  setTimeout(() => {
+  let idx = MESSAGES.findIndex(m => m.id==="call");
+  if (idx>=0) call = MESSAGES.splice(idx, 1)[0];
+  idx = MESSAGES.findIndex(m => m.id==="music");
+  if (idx>=0) music = MESSAGES.splice(idx, 1)[0];
+  idx = MESSAGES.findIndex(m => m.id==="map");
+  if (idx>=0) map = MESSAGES.splice(idx, 1)[0];
+  // check if we were autoloaded for a text message, and for which message(s)
+  const autoload = MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].load);
+  // clear autoload status from messages
+  MESSAGES.forEach(m => delete m.load);
+
+  if (call && call.load) showCall(call);
+  else if (autoload.length) onMessages(autoload);
+  else if (map && map.load) showMap(map);
+  else if (music && music.load) showMusic(music);
+  else if (MESSAGES.length) showMessages(MESSAGES.map((m, i) => i));
+  else showMenu();
+
+  if ((!call || !call.load) && autoload.length) {
+    // autoloaded for message(s): autoclose as well
     let unreadTimeoutSecs = settings.unreadTimeout;
     if (unreadTimeoutSecs===undefined) unreadTimeoutSecs = 60;
     if (unreadTimeoutSecs) {
@@ -573,8 +732,5 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
         load();
       }, unreadTimeoutSecs*1000);
     }
-    // only openMusic on launch if music is new
-    const newMusic = MESSAGES.some(m => m.id==="music" && m.new);
-    checkMessages({clockIfNoMsg: 0, clockIfAllRead: 0, showMsgIfUnread: 1, openMusic: newMusic && settings.openMusic});
-  }, 10); // if checkMessages wants to 'load', do that
+  }
 }

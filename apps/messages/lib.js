@@ -5,33 +5,27 @@
  *   {t:"remove",id:int} // remove
  *   {t:"modify",id:int, title:string} // modified
  */
-/**
- * @returns {boolean} Do we care about music?
- */
-function openMusic() {
-  // only read settings file for first music message
-  if ("undefined"== typeof exports._openMusic) {
-    exports._openMusic = !!((require("Storage").readJSON("messages.settings.json", true) || {}).openMusic);
-  }
-  return exports._openMusic;
-}
+
 /**
  * Load saved events
  * @returns {object[]}
  */
 exports.load = function() {
   // start with contents of old file (if it still exists)
-  const events = (require("Storage").readJSON("messages.json", 1) || []).reverse(); // newest message is first in array, but last in StorageFile
+  let events = (require("Storage").readJSON("messages.json", 1) || []).reverse(); // newest message is first in array, but last in StorageFile
   const f = require("Storage").open("messages.jsonl", "r");
-  let e,l,ids = {};
-  let idx; // keep a list of id=>index
+  let e, l, ids = {}, idx; // keep a list of id=>index
   while((l = f.readLine())!==undefined) {
     e = JSON.parse(l);
     idx = ids[e.id];
-    switch(e.t) {
+    let action = e.t;
+    if (["call", "music", "map"].includes(e.id) && action!=="remove") {
+      action = "add"; // remove previous, and add this to end of list
+    }
+    switch(action) {
       case "remove":
         if (idx!==undefined) {
-          events[idx] = null;
+          events[idx] = null; // we filter() these out later, this preserves indices for ids[] lookup
           delete ids[e.id];
         }
         break;
@@ -44,16 +38,14 @@ exports.load = function() {
       // not found: fall through and add as new
       case "add":
         if (idx!==undefined) {
-          // we got events with duplicate ids :-(
-          // overwrite with the newest one
-          events[idx] = e;
-          break;
+          // duplicate ids, happens deliberately for music/Maps
+          events[idx] = null;
         }
         if (e.id) ids[e.id] = events.length;
         events.push(e);
         break;
       default:
-        throw `Invalid event type "${e.t}"`;
+        throw `Invalid event action "${action}"`;
     }
   }
   return events.filter(e => e).reverse(); // newest message comes last in StorageFile, but should be first in array
@@ -65,8 +57,9 @@ exports.load = function() {
  */
 exports.haveNew = function() {
   try {
-    if ("undefined"!== typeof MESSAGES) return MESSAGES.some(e => e.new && e.id!=="music");
-    return exports.load().some(e => e.new && e.id!=="music");
+    const n = e => (e.new && !["music", "Maps"].includes(e.id));
+    if ("undefined"!== typeof MESSAGES) return MESSAGES.some(n);
+    return exports.load().some(n);
   } catch(e) {
     return false; // don't bother e.g. the widget with errors
   }
@@ -77,6 +70,7 @@ exports.haveNew = function() {
  * @param {object} event
  */
 function append(event) {
+  if (event.t==="remove") event = {t: "remove", id: event.id}; // we only need the id
   require("Storage").open("messages.jsonl", "a")
     .write(JSON.stringify(event)+"\n");
 }
@@ -89,79 +83,124 @@ exports.save = function(events) {
   require("Storage").open("messages.jsonl", "w").erase();
   events.reverse().forEach(append); // newest message is first in array, but last in file
 };
-/**
- * Overwrite storage file with saved messages, to clean up "modify"/"remove" entries
- */
-exports.compact = function() {
-  exports.save(exports.load());
-};
 
 /**
  * Push a new message onto messages queue
  * @param {object} event
  */
 exports.pushMessage = function(event) {
-  let messages;
-  const inApp = "undefined"!= typeof MESSAGES;
+  const inApp = "undefined"!== typeof MESSAGES;
   if (event.t==="add" && event.new===undefined) { // If 'new' has not been set yet, set it
     event.new = true; // Assume it should be new
   } else if (event.t==="remove") {
     if (event.id===undefined) return; // we can't handle this
-    event = {t: "remove", id: event.id}; // we only need the id
   }
+
+  // incoming call
+  if (event.id==="call") {
+    if (inApp) return onCall(event);
+    if (event.t!=="remove") event.load = true;
+    append(event);
+    // load immediately: we want to handle this as soon as possible
+    if (event.t!=="remove") load("messages.app.js");
+    return;
+  }
+
+  /**
+   * Quietly load the app for music/map, if not already loading
+   */
+  function loadQuietly() {
+    if (!exports.loadTimeout && (Bangle.CLOCK || event.important)) {
+      exports.loadTimeout = setTimeout(function() {
+        load("messages.app.js");
+      }, 500);
+    }
+  }
+
+  // music update
+  if (event.id==="music") {
+    if (inApp) return onMusic(event);
+    if (!Bangle.CLOCK) return; // only load music from a clock
+    if ("undefined"=== typeof exports.openMusic) {
+      // only read settings file for first music message
+      exports.openMusic = !!((require("Storage").readJSON("messages.settings.json", true) || {}).openMusic);
+    }
+    if (!exports.openMusic) return; // we don't care about music
+    if (!exports.music) exports.music = {};
+    Object.assign(exports.music, event); // combine state and info messages
+    // load app if we are playing, and we know which track
+    if (exports.music.state==="play" && exports.music.track) {
+      exports.music.load = true;
+      append(exports.music);
+      loadQuietly();
+    }
+    return;
+  }
+
+  // map update
+  if (event.src==="Maps") event.id = "map"; // lump these all together
+  if (event.id==="map") {
+    if (inApp) return onMap(event);
+    if (event.t!=="remove" && (Bangle.CLOCK || event.important)) {
+      event.load = true;
+      append(event);
+      loadQuietly();
+    } else {
+      append(event);
+    }
+    return;
+  }
+
+  // text message
   if (inApp) {
     // we're in an app that has already loaded messages
-    messages = MESSAGES;
     // modify/delete as appropriate
-    let mIdx = messages.findIndex(m => m.id===event.id);
+    let mIdx = MESSAGES.findIndex(m => m.id===event.id);
     if (event.t==="remove") {
-      if (mIdx>=0) messages.splice(mIdx, 1); // remove item
+      if (mIdx>=0) MESSAGES.splice(mIdx, 1); // remove item
       mIdx = -1;
     } else { // add/modify
       if (mIdx<0) {
         mIdx = 0;
-        messages.unshift(event); // add new messages to the beginning
+        MESSAGES.unshift(event); // add new messages to the beginning
       } else {
-        Object.assign(messages[mIdx], event);
-        if (event.id==="music" && messages[mIdx].state==="play") {
-          messages[mIdx].new = true; // new track, or playback (re)started
-        }
+        Object.assign(MESSAGES[mIdx], event);
       }
     }
     // process immediately (saving MESSAGES is app responsibility)
-    return onMessagesModified(mIdx<0 ? {id: event.id} : messages[mIdx]);
+    return onMessages([mIdx]);
   }
   // not in app: append to stored list of messages
-  append(event);
   if (event.t==="remove") {
     // if we've removed the last new message, hide the widget
     if (global.WIDGETS && WIDGETS.message && !exports.haveNew()) WIDGETS.messages.hide();
   }
   if ((event.t==="remove" || event.t==="modify") && Math.random()>=0.8) {
     // perform housekeeping every so often
-    exports.compact();
+    exports.save(exports.load());
   }
-  // ok, saved now
-  if (event.id==="music" && Bangle.CLOCK && event.state==="play" && event.track && openMusic()) {
-    // just load the app to display music: no buzzing
-    load("messages.app.js");
-  } else if (event.t!=="add" || !event.new) {
-    // we only care if it's new
+  // ok, saved now - we only care if it's new
+  if (event.t!=="add" || !event.new) {
+    append(event);
     return;
   }
   // otherwise load messages/show widget
-  const loadMessages = Bangle.CLOCK || event.important;
+  if (Bangle.CLOCK || event.important) {
+    exports.loadMessages = true;
+    event.load = true;
+  }
+  append(event);
   // first, buzz
   const quiet = (require("Storage").readJSON("setting.json", 1) || {}).quiet;
-  if (!quiet && loadMessages && global.WIDGETS && WIDGETS.messages) {
+  if (!quiet && exports.loadMessages && global.WIDGETS && WIDGETS.messages) {
     WIDGETS.messages.buzz();
   }
   // after a delay load the app, to ensure we have all the messages
-  if (exports.messageTimeout) clearTimeout(exports.messageTimeout);
+  if (exports.loadTimeout) clearTimeout(exports.loadTimeout);
   exports.messageTimeout = setTimeout(function() {
     exports.messageTimeout = undefined;
     // if we're in a clock or it's important, go straight to messages app
-    if (loadMessages) return load("messages.app.js");
+    if (exports.loadMessages) return load("messages.app.js");
     if (!quiet && (!global.WIDGETS || !WIDGETS.messages)) return Bangle.buzz(); // no widgets - just buzz to let someone know
     WIDGETS.messages.show();
   }, 500);
