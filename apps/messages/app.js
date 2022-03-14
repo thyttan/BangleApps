@@ -21,14 +21,14 @@
 */
 
 const B2 = process.env.HWVERSION>1;
+const REPLIES = {"ok": "👍", "nak": "👎", "nophone": "📵"};
 const Layout = require("Layout");
 let settings = require("Storage").readJSON("messages.settings.json", true) || {};
 const fontSmall = "6x8";
 const fontMedium = g.getFonts().includes("6x15") ? "6x15" : "6x8:2";
 const fontBig = g.getFonts().includes("12x20") ? "12x20" : "6x8:2";
-const fontLarge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
-let active; // active screen
-let openMusic = false, openMap = false; // go back to map/music screen after we handle something else?
+const fontHuge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
+let active, last; // active screen, last active screen
 // hack for 2v10 firmware's lack of ':size' font handling
 try {
   g.setFont("6x8:2");
@@ -73,41 +73,69 @@ try {
 function onCall(event) {
   if (event.t==="remove") {
     call = undefined;
-    if (active==="call") showMain();
+    if (active==="call") showBack();
   } else {
+    // incoming call: show it
     call = event;
     showCall();
   }
 }
 function onMusic(event) {
   const hadMusic = !!music;
+  // music is never removed: only added/updated
   music = Object.assign(music || {}, event);
-  if (active==="music") showMusic();
-  else if (active==="menu" && !hadMusic) showMenu();
+  if (active==="music") showMusic(); // update music screen
+  else if (active==="menu" && !hadMusic) {
+    if (settings.openMusic) showMusic();
+    else showMenu(); // refresh menu: add "Music" entry
+  }
 }
 function onMap(event) {
   const hadMap = !!map;
   if (event.t==="remove") {
     map = undefined;
-    if (active==="map") showMain();
-    else if (active==="menu" && hadMap) showMenu();
+    if (active==="map") showMenu(); // map is gone
+    else if (active==="menu" && hadMap) showMenu(); // refresh menu: remove "Map" entry
   } else {
     map = event;
-    if (["map", "music"].includes(active)) showMap();
-    else if (active==="menu" && !hadMap) showMenu();
+    if (["map", "music"].includes(active)) showMap(); // update map screen, or switch away from music (not other screens)
+    else if (active==="menu" && !hadMap) showMenu(); // refresh menu: add "Map" entry
   }
 }
-const onMessages = function(idxs) {
-  if (!idxs.some(i => MESSAGES[i]) && active!=="messages") return; // nothing to show
-  if (idxs.some(i => MESSAGES[i] && MESSAGES[i].new) && !((require("Storage").readJSON("setting.json", 1) || {}).quiet)) {
+function onMessageRemoved(idx) {
+  if (!messageList.includes(idx)) return; // we don't care
+  const newList = messageList.filter(i => i!==idx).map(i => i>idx ? i-1 : i), // decrement all indices after this one
+    newIdx = messageIdx>idx ? messageIdx-1 : messageIdx;
+  if (active==="menu") return showMenu(); // update message count
+  if (active==="messages") {
+    if (newList.length===0) { // removed last message
+      if (unreadTimeout) load();
+      else showMenu();
+    } else if (messageIdx===idx) { // we were reading this exact message :-(
+      showMessages(newList, messageList.indexOf(idx));
+    } else {
+      showMessages(newList, newList.indexOf(newIdx));
+    }
+  } else {
+    messageList = newList;
+    messageIdx = newIdx;
+  }
+}
+function onMessageModified(idx) {
+  if (!MESSAGES[idx]) return onMessageRemoved(idx);
+  if (MESSAGES[idx] && MESSAGES[idx].new && !((require("Storage").readJSON("setting.json", 1) || {}).quiet)) {
     if (WIDGETS["messages"]) WIDGETS["messages"].buzz();
     else Bangle.buzz();
   }
-  if (active==="call") return;
-  // show modified messages, followed by any other new messages
-  const unread = MESSAGES.filter((m, i) => m && m.new && !idxs.includes(i)).map((m, i) => i);
-  showMessages(idxs.filter(i => MESSAGES[i]).concat(unread));
-};
+  if (active==="call") return; // don't switch away from incoming call
+  let other; // other messages to show after this
+  if (active==="messages") other = messageList.filter(i => i!==idx); // already on message screen: keep list
+  else other = MESSAGES.map((m, i) => i).filter((m, i) => MESSAGES[i].new && i!==idx); // append other new messages
+  // show modified message (if any), followed by other messages
+  const toShow = (MESSAGES[idx] ? [idx] : []).concat(other);
+  if (toShow.length) showMessages(toShow);
+  else if (["messages", "menu"].includes(active)) showMenu();
+}
 
 function getMusicImage() {
   return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
@@ -187,9 +215,7 @@ function getMessageImageCol(msg, def) {
 }
 
 function showMap() {
-  clearStuff();
-  active = "map";
-  openMap = true;
+  setActive("map");
   let m, distance, street, target, eta;
   m = map.title.match(/(.*) - (.*)/);
   if (m) {
@@ -211,7 +237,7 @@ function showMap() {
       {
         type: "h", bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, c: [
           {type: "txt", font: "6x8", label: "Towards"},
-          {type: "txt", font: fontLarge, label: street}
+          {type: "txt", font: fontHuge, label: street}
         ]
       },
       {
@@ -219,7 +245,7 @@ function showMap() {
           map.img ? {type: "img", src: atob(map.img), scale: 2} : {},
           {
             type: "v", fillx: 1, c: [
-              {type: "txt", font: fontLarge, label: distance || ""}
+              {type: "txt", font: fontHuge, label: distance || ""}
             ]
           },
         ]
@@ -228,11 +254,8 @@ function showMap() {
     ]
   });
   layout.render();
-  // go back to menu on any input
-  let goBack = () => {
-    openMap = false;
-    showMenu();
-  };
+  // go back on any input
+  let goBack = () => showBack();
   Bangle.setUI({
     mode: "custom",
     back: goBack,
@@ -260,7 +283,6 @@ function toggleMusic() {
 function showMusic() {
   active = "music";
   clearStuff();
-  openMusic = music.state==="play";
   let trackScrollOffset = 0;
   let artistScrollOffset = 0;
   let albumScrollOffset = 0;
@@ -306,15 +328,12 @@ function showMusic() {
           }
         ]
       },
-      {type: "txt", font: fontLarge, bgCol: g.theme.bg, label: trackName, fillx: 1, filly: 1, pad: 2, id: "track"},
+      {type: "txt", font: fontHuge, bgCol: g.theme.bg, label: trackName, fillx: 1, filly: 1, pad: 2, id: "track"},
       {type: "txt", font: fontMedium, bgCol: g.theme.bg, label: music.dur ? fmtTime(music.dur) : "--:--"}
     ]
   });
   layout.render();
-  const goBack = () => {
-    openMusic = false;
-    showMenu();
-  };
+  const goBack = () => showMenu();
   Bangle.setUI({
     mode: "updown",
     back: B2 ? () => goBack() : undefined,
@@ -342,41 +361,65 @@ function showMusic() {
 }
 
 let layout;
+function clearUnreadTimeout() {
+  if (unreadTimeout) clearTimeout(unreadTimeout);
+  unreadTimeout = undefined;
+}
 function clearStuff() {
   delete Bangle.appRect;
   layout = undefined;
   Bangle.setUI();
+  clearUnreadTimeout();
   ["touch", "drag", "swipe"].forEach(l => Bangle.removeAllListeners(l));
-  if (unreadTimeout) clearTimeout(unreadTimeout);
-  unreadTimeout = undefined;
   if (updateLabelsInterval) clearInterval(updateLabelsInterval);
   updateLabelsInterval = undefined;
   g.clearRect(Bangle.appRect);
 }
-function showMain() {
-  if (map && openMap) showMap();
-  else if (music && openMusic) showMusic();
+function setActive(screen, args) {
+  clearStuff();
+  if (last!==screen) last = active;
+  if (screen==="messages") messageList = args;
+  active = screen;
+}
+function showBack() {
+  if (last==="call" && call) showCall();
+  else if (last==="map" && map) showMap();
+  else if (last==="music" && music) showMusic();
+  else if (last==="messages" && messageList.length) showMessages(messageList.filter(idx => MESSAGES[idx]));
   else showMenu();
 }
 function showMenu() {
-  active = "menu";
-  clearStuff();
+  setActive("menu");
   let menu = {
     "": {title:/*LANG*/"Messages"},
     /*LANG*/"< Back": () => load(),
   };
   if (call) menu[/*LANG*/"Incoming call"] = () => showCall();
-  const unread = MESSAGES.filter(m => m.new);
-  if (unread.length) menu[unread.length+" "+/*LANG*/"New"] = () => showMessages(unread.map((m, i) => i));
-  if (MESSAGES.length) menu[/*LANG*/"All "+` (${MESSAGES.length})`] = () => showMessages(MESSAGES.map((m, i) => i));
-  else menu[/*LANG*/"No Messages"] = () => showMessages(MESSAGES.map((m, i) => i));
+  // showMessage wants MESSAGES indices
+  const unread = MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new),
+    all = MESSAGES.map((m, i) => i);
+  if (unread.length) {
+    menu[unread.length+" "+/*LANG*/"New"] = () => showMessages(unread);
+    if (all.length) menu[/*LANG*/"All"+` (${MESSAGES.length})`] = () => showMessages(all);
+  } else {
+    if (all.length) menu[MESSAGES.length+" "+/*LANG*/"Messages"] = () => showMessages(all);
+    else menu[/*LANG*/"No Messages"] = undefined;
+  }
+  if (MESSAGES.length) {
+    menu[/*LANG*/"Delete all"] = () => {
+      E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
+        if (isYes) MESSAGES = [];
+        showMenu();
+      });
+    };
+  }
   if (map) menu[/*LANG*/"Map"] = () => showMap();
   if (music) menu[/*LANG*/"Music"] = () => showMusic();
   menu[/*LANG*/"Settings"] = () => showSettings();
   E.showMenu(menu);
 }
 function showSettings() {
-  active = "settings";
+  setActive("settings");
   eval(require("Storage").read("messages.settings.js"))(() => {
     settings = require("Storage").readJSON("messages.settings.json", true) || {};
     MESSAGES.forEach(m => delete m.h); // in case font size changed
@@ -384,10 +427,9 @@ function showSettings() {
   });
 }
 function showCall() {
-  active = "call";
-  clearStuff();
+  setActive("call");
   // Normal text message display
-  let title = call.title, titleFont = fontLarge, lines, w;
+  let title = call.title, titleFont = fontHuge, lines, w;
   w = g.getWidth()-48;
   if (g.setFont(titleFont).stringWidth(title)>w) {
     titleFont = fontBig;
@@ -400,7 +442,7 @@ function showCall() {
     title = (lines.length>2) ? lines.slice(0, 2).join("\n")+"..." : lines.join("\n");
   }
   // If body of message is only two lines long w/ large font, use large font.
-  let body = call.body, bodyFont = fontLarge;
+  let body = call.body, bodyFont = fontHuge;
   w = g.getWidth()-10;
   if (g.setFont(bodyFont).stringWidth(body)>w*2) {
     bodyFont = fontBig;
@@ -417,7 +459,7 @@ function showCall() {
     Bangle.buzz(20);
     Bangle.messageResponse(call, accept);
     call = undefined;
-    showMain();
+    showBack();
   }
   let options = {};
   if (!B2) {
@@ -427,7 +469,7 @@ function showCall() {
         cb: () => respond(true),
       }, {
         label:/*LANG*/"ignore",
-        cb: () => showMain(),
+        cb: () => showBack(),
       }, {
         label:/*LANG*/"reject",
         cb: () => respond(false),
@@ -451,9 +493,9 @@ function showCall() {
       {type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2},
       {
         type: "h", fillx: 1, c: [
-          {type: B2 ? "btn" : "img", src: getPosImage(), cb: () => respond(true)},
+          {type: B2 ? "btn" : "img", src: getNegImage(), cb: () => respond(false)},
           {fillx: 1},
-          {type: B2 ? "btn" : "img", src: getNegImage(), cb: () => respond(false)}
+          {type: B2 ? "btn" : "img", src: getPosImage(), cb: () => respond(true)},
         ]
       }
     ]
@@ -461,37 +503,44 @@ function showCall() {
   layout.render();
   Bangle.setUI({
     mode: "custom",
-    back: () => showMain(),
-    swipe: dir => {if (dir===1) showMenu();},
+    back: () => showBack(),
     touch: side => {
-      if (side===1) respond(true);
-      if (side===2) respond(false);
+      if (side===1) respond(false);
+      if (side===2) respond(true);
     },
     btn: b => {
-      if (B2 || b===2) showMenu();
+      if (B2 || b===2) showBack();
       else if (b===1) respond(true);
       else respond(false);
     }
   });
 }
-function getMessageHeight(msg) {
+function getMessageHeight(msg, footer) {
   if (msg.h) return msg.h;
-  let h = 0;
+  let h = 0, lines;
+
   // header:
-  let w = g.getWidth()-48; // room for icon
-  let title = msg.title, titleFont = fontLarge;
-  if (g.setFont(titleFont).stringWidth(title)>w) {
-    titleFont = fontBig;
-    if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
-      titleFont = fontMedium;
+  h += 4; // 2x2 padding
+  h += g.setFont(fontSmall).stringMetrics(msg.src).height;
+  let w = g.getWidth()-46; // room for icon(22)+padding(2x10+2x2)
+  let title = msg.title, titleFont = fontHuge;
+  if (title) {
+    h += 2; // padding
+    if (g.setFont(titleFont).stringWidth(title)>w) {
+      titleFont = fontBig;
+      if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
+        titleFont = fontMedium;
+      }
     }
+    lines = g.setFont(titleFont).wrapString(title, w);
+    h += g.stringMetrics(lines.join("\n")).height;
   }
-  let lines = g.setFont(titleFont).wrapString(title, w);
-  h += Math.max(48, g.stringMetrics(lines.join("\n")).height); // at least icon height
+  h = Math.max(42, h); // at least icon(22)+padding(2x10)
 
   // body:
+  h += 4; // 2x2 padding
   w = g.getWidth()-10;
-  let body = msg.body, bodyFont = fontLarge;
+  let body = msg.body, bodyFont = fontHuge;
   if (g.setFont(bodyFont).stringWidth(body)>w*2) {
     bodyFont = fontBig;
     if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
@@ -501,31 +550,70 @@ function getMessageHeight(msg) {
   lines = g.setFont(bodyFont).wrapString(body, w);
   h += g.stringMetrics(lines.join("\n")).height;
 
+  // footer:
+  if (footer) {
+    h += g.setFont(fontSmall).stringMetrics(footer).height;
+  }
+
   // remember for next time
   msg.h = h;
 
   return h;
 }
-function showMessages(idxs) {
+function deleteMessage() {
+  let idx = messageIdx, msg = MESSAGES[idx];
+  Bangle.messageResponse(msg, false);
+  MESSAGES.splice(idx, 1);
+  const inList = messageList.indexOf(idx);
+  if (inList>=0) messageList.splice(inList, 1);
+  if (messageList.length<1) showBack(); // no more messages
+  else showMessages(messageList, inList);
+}
+function showMessageMenu() {
   clearStuff();
-  active = "messages";
+  let menu = {
+    /*LANG*/"< Back": () => showMessages(messageList, messageIdx),
+  };
+  for(let label in REPLIES) {
+    menu[label] = () => {
+      Bangle.messageResponse(MESSAGES[messageIdx], REPLIES[label]);
+      showMessages(messageList, messageIdx);
+    };
+  }
+  menu[/*LANG*/"Delete"] = () => deleteMessage();
+  E.showMenu(menu);
+}
+/**
+ * Show a list of messages
+ *
+ * @param {array<number>} idxs Indices in MESSAGES to show
+ * @param {number} [messageNum=0] Index in idxs of message to show, default to 0
+ */
+function showMessages(idxs, messageNum) {
+  idxs = idxs.filter(i => MESSAGES[i]); // make sure all those messages still exist
+  setActive("messages", idxs);
   if (!idxs.length) {
+    // I /think/ this should never happen...
     return E.showPrompt(/*LANG*/"No Messages", {
       title:/*LANG*/"Messages",
       img: require("heatshrink").decompress(atob("kkk4UBrkc/4AC/tEqtACQkBqtUDg0VqAIGgoZFDYQIIM1sD1QAD4AIBhnqA4WrmAIBhc6BAWs8AIBhXOBAWz0AIC2YIC5wID1gkB1c6BAYFBEQPqBAYXBEQOqBAnDAIQaEnkAngaEEAPDFgo+IKA5iIOhCGIAFb7RqAIGgtUBA0VqobFgNVA")),
       buttons: {/*LANG*/"Ok": 1}
     }).then(() => { showMenu(); });
   }
+  if (messageNum<0) messageNum = messageIdx; // deleted: show message now at position we were
+  if (!messageNum) messageNum = 0; // no number: show first
+  if (messageNum>=idxs.length) messageNum = idxs.length-1; // we deleted the very last message
   let n, // message number of idxs
     idx, // index of message in MESSAGES
-    msg, // the actual message
+    msg, // actual message
     h,   // message height
     offset, oldOffset;
   const ar = Bangle.appRect;
   const move = (dy) => {
     moving = true; // prevent scrolling right into next/prev message
-    offset = Math.max(0, Math.min(h-ar.h, offset+dy));
-    dy = oldOffset-offset;
+    offset = Math.max(0, Math.min(h-ar.h, offset+dy)); // clip at message height
+    dy = oldOffset-offset; // real dy
+    // move all elements to new offset
     function offsetRecurser(l) {
       if (l.y) l.y += dy;
       if (l.c) l.c.forEach(offsetRecurser);
@@ -539,7 +627,6 @@ function showMessages(idxs) {
     g.reset = () => { // stop Layout resetting ClipRect
       g.setColor(g.theme.fg).setBgColor(g.theme.bg);
     };
-    // move all elements to new offset
     layout.render();
     delete g.reset;
   };
@@ -547,73 +634,35 @@ function showMessages(idxs) {
   const buzzOnce = () => {
     if (buzzing) return;
     buzzing = true;
-    Bangle.buzz(40).then(() => setTimeout(() => {buzzing = false;}, 500));
+    Bangle.buzz(50).then(() => setTimeout(() => {buzzing = false;}, 500));
   };
   const showMsg = num => {
+    clearStuff();
     n = num;
     idx = idxs[n];
+    messageIdx = idx;
     msg = MESSAGES[idx];
-    h = Math.max(getMessageHeight(msg), ar.h);
+    let footer = idxs.length>1 ? `${n+1}/${idxs.length}` : "";
+    h = Math.max(getMessageHeight(msg, footer), ar.h);
     offset = 0;
     oldOffset = 0;
-    layout = getMessageLayout(msg, idxs.length>1 ? `${n+1}/${idxs.length}` : "");
+    layout = getMessageLayout(msg, footer);
     // lie to Layout library about available space
     Bangle.appRect = Object.assign({}, ar, {h: h, y2: ar.y+h-1});
     layout.update();
     delete Bangle.appRect;
-    let askDelete = () => {
-      E.showPrompt(/*LANG*/"Delete message?").then(confirm => {
-        if (!confirm) return showMsg(n);
-        Bangle.messageResponse(msg, false);
-        MESSAGES.splice(idx, 1);
-        idxs.splice(n, 1);
-        if (idxs.length<1) showMenu(); // no more messages
-        else if (n<idxs.length) showMsg(n); // next message took this one's place
-        else showMsg(n-1); // deleted last message
-      });
-    };
     draw();
-    if (!B2) {
-      Bangle.setUI("updown", dir => {
-        delete msg.new;
-        const STEP = 50;
-        if (dir=== -1) { // up
-          if (h>ar.h && offset<h-ar.h) {
-            move(+STEP);
-          } else if (n<idxs.length-1) { // bottom reached: show next
-            Bangle.buzz(30);
-            showMsg(n+1);
-          } else {
-            buzzOnce();
-          }
-        } else if (dir===1) { // down
-          if (offset>0) {
-            move(-STEP);
-          } else if (n>0) { // top reached: show prev
-            Bangle.buzz(30);
-            showMsg(n-1);
-          } else {
-            buzzOnce();
-          }
-        } else { // middle button
-          showMessageMenu();
-        }
-      });
-    } else {
+    if (B2) {
       Bangle.setUI({
         mode: "custom",
-        back: () => showMain(),
+        back: () => {
+          messageList = [];
+          showBack();
+        },
         swipe: dir => {
           delete msg.new;
-          if (dir===1) showMenu();
-          else if (dir=== -1) {
-            Bangle.buzz(30);
-            askDelete();
-          }
-        },
-        touch: side => {
-          delete msg.new;
-          showMessageMenu();
+          if (dir===1) showBack();
+          else if (dir=== -1) showMessageMenu();
         },
         drag: e => {
           delete msg.new;
@@ -627,7 +676,7 @@ function showMessages(idxs) {
                 showMsg(n+1);
               }
             } else {
-              buzzOnce();
+              buzzOnce(); // already at bottom of last message
             }
           } else if (dy>0) {// down
             if (offset>0) {
@@ -638,20 +687,50 @@ function showMessages(idxs) {
                 showMsg(n-1);
               }
             } else {
-              buzzOnce();
+              buzzOnce(); // already at top of first message
             }
           }
           if (!e.b) moving = false; // touch stopped: we can swipe to another message (if we reached the top/bottom)
         }
       });
+    } else {
+      Bangle.setUI({
+        mode: "updown",
+        back: () => {
+          messageList = [];
+          showBack();
+        },
+      }, dir => {
+        delete msg.new;
+        const STEP = 50;
+        if (dir=== -1) { // up
+          if (h>ar.h && offset<h-ar.h) {
+            move(+STEP);
+          } else if (n<idxs.length-1) { // bottom reached: show next
+            Bangle.buzz(30);
+            showMsg(n+1);
+          } else {
+            buzzOnce(); // already at bottom of last message
+          }
+        } else if (dir===1) { // down
+          if (offset>0) {
+            move(-STEP);
+          } else if (n>0) { // top reached: show previous
+            Bangle.buzz(30);
+            showMsg(n-1);
+          } else {
+            buzzOnce(); // already at top of first message
+          }
+        }
+      });
     }
   };
-  showMsg(0);
+  showMsg(messageNum);
 }
 
 function getMessageLayout(msg, footer) {
   // Normal text message display
-  let title = msg.title, titleFont = fontLarge, w;
+  let title = msg.title, titleFont = fontHuge, w;
   if (title) {
     w = g.getWidth()-48;
     if (g.setFont(titleFont).stringWidth(title)>w) {
@@ -660,23 +739,19 @@ function getMessageLayout(msg, footer) {
         titleFont = fontMedium;
       }
     }
-    if (g.setFont(titleFont).stringWidth(title)>w) {
-      title = g.wrapString(title, w).join("\n");
-    }
+    title = g.setFont(titleFont).wrapString(title, w).join("\n");
   }
   // If body of message is only two lines long w/ large font, use large font.
-  let body = msg.body, bodyFont = fontLarge;
+  let body = msg.body, bodyFont = fontHuge;
   if (body) {
     w = g.getWidth()-10;
     if (g.setFont(bodyFont).stringWidth(body)>w*2) {
       bodyFont = fontBig;
-      if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
+      if (settings.fontSize!==1 && g.stringWidth(body)>w*3) {
         bodyFont = fontMedium;
       }
     }
-    if (g.setFont(bodyFont).stringWidth(body)>w) {
-      body = g.setFont(bodyFont).wrapString(msg.body, w).join("\n");
-    }
+    body = g.setFont(bodyFont).wrapString(msg.body, w).join("\n");
   }
 
   layout = new Layout({
@@ -693,13 +768,13 @@ function getMessageLayout(msg, footer) {
         ]
       },
       {type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2},
-      footer ? {type: "txt", font: fontSmall, label: footer} : {},
+      footer ? {type: "txt", font: fontSmall, label: footer, halign: 1} : {},
     ]
   });
   return layout;
 }
 
-let call, music, map;
+let call, music, map, messageIdx, messageList = [];
 if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   g.clear();
   Bangle.loadWidgets();
@@ -716,9 +791,10 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   MESSAGES.forEach(m => delete m.load);
 
   if (call && call.load) showCall(call);
-  else if (autoload.length) onMessages(autoload);
+  else if (autoload.length) showMessages(autoload);
   else if (map && map.load) showMap(map);
   else if (music && music.load) showMusic(music);
+  else if (MESSAGES.some(m => m.new)) showMessages(MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new));
   else if (MESSAGES.length) showMessages(MESSAGES.map((m, i) => i));
   else showMenu();
 
@@ -731,6 +807,7 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
         print("Message not seen - reloading");
         load();
       }, unreadTimeoutSecs*1000);
+      ["touch", "drag", "swipe"].forEach(l => Bangle.on(l, clearUnreadTimeout));
     }
   }
 }

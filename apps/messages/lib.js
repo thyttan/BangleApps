@@ -152,6 +152,12 @@ exports.pushMessage = function(event) {
   }
 
   // text message
+  // clean up:
+  if (event.title) {
+    // (at least) WhatsApp includes the total number of messages in group names, which makes for very long titles
+    // so shorten e.g. "Sample Group (3 messages): Kim" to "Sample Group (3): Kim"
+    [/*LANG*/"message", /*LANG*/"messages"].forEach(t => event.title = event.title.replace(" "+t+")", ")"));
+  }
   if (inApp) {
     // we're in an app that has already loaded messages
     // modify/delete as appropriate
@@ -168,7 +174,7 @@ exports.pushMessage = function(event) {
       }
     }
     // process immediately (saving MESSAGES is app responsibility)
-    return onMessages([mIdx]);
+    return onMessageModified(mIdx);
   }
   // not in app: append to stored list of messages
   if (event.t==="remove") {
@@ -211,8 +217,8 @@ exports.clearAll = function() {
   if (inApp) MESSAGES = []; // we're in an app that has already loaded messages
   // Erase messages file
   exports.save([]);
-  // update app if in app
-  if (inApp) return onMessagesModified();
   // if we have a widget, update it
   if (global.WIDGETS && WIDGETS.messages) WIDGETS.messages.hide();
+  // update app if in app
+  if (inApp&&["messages","menu"].includes(active)) showMenu();
 };
