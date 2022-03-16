@@ -73,7 +73,7 @@ try {
 function onCall(event) {
   if (event.t==="remove") {
     call = undefined;
-    if (active==="call") showBack();
+    if (active==="call") goBack();
   } else {
     // incoming call: show it
     call = event;
@@ -85,32 +85,32 @@ function onMusic(event) {
   // music is never removed: only added/updated
   music = Object.assign(music || {}, event);
   if (active==="music") showMusic(); // update music screen
-  else if (active==="menu" && !hadMusic) {
+  else if (active==="main" && !hadMusic) {
     if (settings.openMusic) showMusic();
-    else showMenu(); // refresh menu: add "Music" entry
+    else showMain(); // refresh menu: add "Music" entry
   }
 }
 function onMap(event) {
   const hadMap = !!map;
   if (event.t==="remove") {
     map = undefined;
-    if (active==="map") showMenu(); // map is gone
-    else if (active==="menu" && hadMap) showMenu(); // refresh menu: remove "Map" entry
+    if (active==="map") showMain(); // map is gone
+    else if (active==="main" && hadMap) showMain(); // refresh menu: remove "Map" entry
   } else {
     map = event;
     if (["map", "music"].includes(active)) showMap(); // update map screen, or switch away from music (not other screens)
-    else if (active==="menu" && !hadMap) showMenu(); // refresh menu: add "Map" entry
+    else if (active==="main" && !hadMap) showMain(); // refresh menu: add "Map" entry
   }
 }
 function onMessageRemoved(idx) {
   if (!messageList.includes(idx)) return; // we don't care
   const newList = messageList.filter(i => i!==idx).map(i => i>idx ? i-1 : i), // decrement all indices after this one
     newIdx = messageIdx>idx ? messageIdx-1 : messageIdx;
-  if (active==="menu") return showMenu(); // update message count
+  if (active==="main") return showMain(); // update message count
   if (active==="messages") {
     if (newList.length===0) { // removed last message
       if (unreadTimeout) load();
-      else showMenu();
+      else showMain();
     } else if (messageIdx===idx) { // we were reading this exact message :-(
       showMessages(newList, messageList.indexOf(idx));
     } else {
@@ -134,14 +134,26 @@ function onMessageModified(idx) {
   // show modified message (if any), followed by other messages
   const toShow = (MESSAGES[idx] ? [idx] : []).concat(other);
   if (toShow.length) showMessages(toShow);
-  else if (["messages", "menu"].includes(active)) showMenu();
+  else if (["messages", "main"].includes(active)) showMain();
 }
 
+function getPhoneImage() {
+  return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
+}
+function getMapImage() {
+  return atob("GRmBAAAAAAAAAAAAAAIAYAHx/wH//+D/+fhz75w/P/4f//8P//uH///D///h3f/w4P+4eO/8PHZ+HJ/nDu//g///wH+HwAYAIAAAAAAAAAAAAAA=");
+}
 function getMusicImage() {
   return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
 }
+function getSettingsImage() {
+  return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
+}
 function getBackImage() {
   return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
+}
+function getUnreadImage() {
+  return atob("HRiBAAAAH4AAAf4AAB/4AAHz4AAfn4AA/Pz/5+fj/z8/j/n5/j/P//j/Pn3j+PPPx+P8fx+Pw/x+AF/B4A78RiP3xwOPvHw+Pcf/+Ox//+NH//+If//+B///+A==");
 }
 function getNotificationImage() {
   return atob("HBKBAD///8H///iP//8cf//j4//8f5//j/x/8//j/H//H4//4PB//EYj/44HH/Hw+P4//8fH//44///xH///g////A==");
@@ -172,7 +184,7 @@ function getMessageImage(msg) {
   if (s==="mail") return getNotificationImage();
   if (s==="messenger") return getFBIcon();
   if (s==="outlook mail") return getNotificationImage();
-  if (s==="phone") return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
+  if (s==="phone") return getPhoneImage();
   if (s==="skype") return atob("GhoBB8AAB//AA//+Af//wH//+D///w/8D+P8Afz/DD8/j4/H4fP5/A/+f4B/n/gP5//B+fj8fj4/H8+DB/PwA/x/A/8P///B///gP//4B//8AD/+AAA+AA==");
   if (s==="slack") return atob("GBiBAAAAAAAAAABAAAHvAAHvAADvAAAPAB/PMB/veD/veB/mcAAAABzH8B3v+B3v+B3n8AHgAAHuAAHvAAHvAADGAAAAAAAAAAAAAA==");
   if (s==="sms message") return getNotificationImage();
@@ -255,7 +267,6 @@ function showMap() {
   });
   layout.render();
   // go back on any input
-  let goBack = () => showBack();
   Bangle.setUI({
     mode: "custom",
     back: goBack,
@@ -281,7 +292,7 @@ function toggleMusic() {
   }
 }
 function showMusic() {
-  active = "music";
+  setActive("music");
   clearStuff();
   let trackScrollOffset = 0;
   let artistScrollOffset = 0;
@@ -333,10 +344,9 @@ function showMusic() {
     ]
   });
   layout.render();
-  const goBack = () => showMenu();
   Bangle.setUI({
     mode: "updown",
-    back: B2 ? () => goBack() : undefined,
+    back: () => goBack(),
   }, ud => {
     if (!Bangle.musicControl) return;
     if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
@@ -370,60 +380,133 @@ function clearStuff() {
   layout = undefined;
   Bangle.setUI();
   clearUnreadTimeout();
-  ["touch", "drag", "swipe"].forEach(l => Bangle.removeAllListeners(l));
   if (updateLabelsInterval) clearInterval(updateLabelsInterval);
   updateLabelsInterval = undefined;
   g.clearRect(Bangle.appRect);
 }
 function setActive(screen, args) {
   clearStuff();
-  if (last!==screen) last = active;
+  if (![last, screen].includes(active)) last = active;
   if (screen==="messages") messageList = args;
   active = screen;
 }
-function showBack() {
+function goBack() {
   if (last==="call" && call) showCall();
   else if (last==="map" && map) showMap();
   else if (last==="music" && music) showMusic();
   else if (last==="messages" && messageList.length) showMessages(messageList.filter(idx => MESSAGES[idx]));
-  else showMenu();
+  else if (last) showMain(); // previous screen was "main", or no longer valid
+  else load(); // no previous screen: go back to clock
 }
-function showMenu() {
-  setActive("menu");
-  let menu = {
-    "": {title:/*LANG*/"Messages"},
-    /*LANG*/"< Back": () => load(),
-  };
+function showMain() {
+  setActive("main");
+  let menu = {"": {title:/*LANG*/"Messages"}};
   if (call) menu[/*LANG*/"Incoming call"] = () => showCall();
   // showMessage wants MESSAGES indices
   const unread = MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new),
     all = MESSAGES.map((m, i) => i);
   if (unread.length) {
     menu[unread.length+" "+/*LANG*/"New"] = () => showMessages(unread);
-    if (all.length) menu[/*LANG*/"All"+` (${MESSAGES.length})`] = () => showMessages(all);
+    if (all.length) menu[/*LANG*/"All"+` (${all.length})`] = () => showMessages(all);
   } else {
-    if (all.length) menu[MESSAGES.length+" "+/*LANG*/"Messages"] = () => showMessages(all);
+    const allLabel = all.length+" "+(all.length===1 ?/*LANG*/"Message" :/*LANG*/"Messages");
+    if (all.length) menu[allLabel] = () => showMessages(all);
     else menu[/*LANG*/"No Messages"] = undefined;
-  }
-  if (MESSAGES.length) {
-    menu[/*LANG*/"Delete all"] = () => {
-      E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
-        if (isYes) MESSAGES = [];
-        showMenu();
-      });
-    };
   }
   if (map) menu[/*LANG*/"Map"] = () => showMap();
   if (music) menu[/*LANG*/"Music"] = () => showMusic();
   menu[/*LANG*/"Settings"] = () => showSettings();
-  E.showMenu(menu);
+  if (B2) showGrid(menu);
+  else E.showMenu(menu);
 }
+function showGrid(items) {
+  clearStuff();
+  const options = items[""] || {},
+    keys = Object.keys(items).filter(k => k),
+    rows = Math.round(Math.sqrt(keys.length)),
+    cols = Math.ceil(keys.length/rows);
+  function getIcon(label) {
+    // main
+    if (label=== /*LANG*/"Incoming call") return getPhoneImage();
+    if (label=== /*LANG*/"No Messages") return getNegImage();
+    if (label.endsWith(/*LANG*/"New")) return getUnreadImage();
+    if (label.endsWith(/*LANG*/"Messages") || label.endsWith(/*LANG*/"Message")) return getNotificationImage();
+    if (label.startsWith(/*LANG*/"All")) return getNotificationImage();
+    if (label=== /*LANG*/"Map") return getMapImage();
+    if (label=== /*LANG*/"Music") return getMusicImage();
+    if (label=== /*LANG*/"Settings") return getSettingsImage();
+    // message actions
+    if (label===/*LANG*/"Dismiss") return getPosImage();
+    if (label==="ok") return getPosImage();
+    if (label==="nak") return getNegImage();
+    if (label==="nophone") return getPhoneImage();
+  }
+  let row = {type: "h", filly: 1, c: []},
+    l = {type: "v", c: []};
+  // unshift in reverse order: in non-full grid the top row gets more space
+  keys.reverse().forEach(k => {
+    const item = items[k];
+    row.c.unshift({
+      type: "v", pad: 2, fillx: 1, c: [
+        {
+          type: "btn",
+          src: getIcon(k),
+          cb: item,
+        },
+        {height: 2},
+        {type: "txt", label: k, font: fontSmall},
+      ]
+    });
+    if (row.c.length>=cols) {
+      l.c.unshift(row);
+      row = {type: "h", filly: 1, c: []};
+    }
+  });
+  if (row.c.length) l.c.unshift(row);
+  if (options.title) l.c.unshift({type: "txt", label: options.title, font: fontBig, fillx: 1});
+
+  layout = new Layout(l);
+  layout.render();
+  // lifted from Bangle.setUI (can't use setUI: layout is using it)
+  if (options.back) {
+    if (WIDGETS.back) WIDGETS.back.remove();
+    let touchHandler, btnWatch;
+    if (B2) {
+      touchHandler = (_, e) => {
+        if (e.y<24 && e.x<48) options.back();
+      };
+      btnWatch = setWatch(function() {
+        options.back();
+      }, BTN1, {edge: "falling"});
+    } else {
+      touchHandler = (z) => {
+        if (z===1) options.back();
+      };
+    }
+    WIDGETS = Object.assign({
+      back: {
+        area: "tl", width: 24,
+        draw: e => g.reset().setColor("#f00").drawImage(atob("GBiBAAAYAAH/gAf/4A//8B//+D///D///H/P/n+H/n8P/n4f/vwAP/wAP34f/n8P/n+H/n/P/j///D///B//+A//8Af/4AH/gAAYAA=="), e.x, e.y),
+        remove: () => {
+          if (btnWatch) clearWatch(btnWatch);
+          Bangle.removeListener("touch", touchHandler);
+          g.reset().clearRect({x: WIDGETS.back.x, y: WIDGETS.back.y, w: 24, h: 24});
+          delete WIDGETS.back;
+          Bangle.drawWidgets();
+        }
+      }
+    }, global.WIDGETS);
+    Bangle.on("touch", touchHandler);
+    Bangle.drawWidgets();
+  }
+}
+
 function showSettings() {
   setActive("settings");
   eval(require("Storage").read("messages.settings.js"))(() => {
     settings = require("Storage").readJSON("messages.settings.json", true) || {};
     MESSAGES.forEach(m => delete m.h); // in case font size changed
-    showMenu();
+    showMain();
   });
 }
 function showCall() {
@@ -459,7 +542,7 @@ function showCall() {
     Bangle.buzz(20);
     Bangle.messageResponse(call, accept);
     call = undefined;
-    showBack();
+    goBack();
   }
   let options = {};
   if (!B2) {
@@ -469,7 +552,7 @@ function showCall() {
         cb: () => respond(true),
       }, {
         label:/*LANG*/"ignore",
-        cb: () => showBack(),
+        cb: () => goBack(),
       }, {
         label:/*LANG*/"reject",
         cb: () => respond(false),
@@ -503,13 +586,13 @@ function showCall() {
   layout.render();
   Bangle.setUI({
     mode: "custom",
-    back: () => showBack(),
+    back: () => goBack(),
     touch: side => {
       if (side===1) respond(false);
       if (side===2) respond(true);
     },
     btn: b => {
-      if (B2 || b===2) showBack();
+      if (B2 || b===2) goBack();
       else if (b===1) respond(true);
       else respond(false);
     }
@@ -560,19 +643,25 @@ function getMessageHeight(msg, footer) {
 
   return h;
 }
-function deleteMessage() {
+/**
+ * Dismiss message, and delete it from list
+ */
+function dismissMessage() {
   let idx = messageIdx, msg = MESSAGES[idx];
   Bangle.messageResponse(msg, false);
   MESSAGES.splice(idx, 1);
   const inList = messageList.indexOf(idx);
   if (inList>=0) messageList.splice(inList, 1);
-  if (messageList.length<1) showBack(); // no more messages
+  if (messageList.length<1) goBack(); // no more messages
   else showMessages(messageList, inList);
 }
-function showMessageMenu() {
+function showMessageActions() {
   clearStuff();
   let menu = {
-    /*LANG*/"< Back": () => showMessages(messageList, messageIdx),
+    "": {
+      title: /*LANG*/"Message",
+      back: () => showMessages(messageList, messageIdx),
+    }
   };
   for(let label in REPLIES) {
     menu[label] = () => {
@@ -580,8 +669,9 @@ function showMessageMenu() {
       showMessages(messageList, messageIdx);
     };
   }
-  menu[/*LANG*/"Delete"] = () => deleteMessage();
-  E.showMenu(menu);
+  menu[/*LANG*/"Dismiss"] = () => dismissMessage();
+  if (B2) showGrid(menu);
+  else E.showMenu(menu);
 }
 /**
  * Show a list of messages
@@ -598,7 +688,7 @@ function showMessages(idxs, messageNum) {
       title:/*LANG*/"Messages",
       img: require("heatshrink").decompress(atob("kkk4UBrkc/4AC/tEqtACQkBqtUDg0VqAIGgoZFDYQIIM1sD1QAD4AIBhnqA4WrmAIBhc6BAWs8AIBhXOBAWz0AIC2YIC5wID1gkB1c6BAYFBEQPqBAYXBEQOqBAnDAIQaEnkAngaEEAPDFgo+IKA5iIOhCGIAFb7RqAIGgtUBA0VqobFgNVA")),
       buttons: {/*LANG*/"Ok": 1}
-    }).then(() => { showMenu(); });
+    }).then(() => { showMain(); });
   }
   if (messageNum<0) messageNum = messageIdx; // deleted: show message now at position we were
   if (!messageNum) messageNum = 0; // no number: show first
@@ -657,12 +747,12 @@ function showMessages(idxs, messageNum) {
         mode: "custom",
         back: () => {
           messageList = [];
-          showBack();
+          goBack();
         },
         swipe: dir => {
           delete msg.new;
-          if (dir===1) showBack();
-          else if (dir=== -1) showMessageMenu();
+          if (dir===1) goBack();
+          else if (dir=== -1) showMessageActions();
         },
         drag: e => {
           delete msg.new;
@@ -698,7 +788,7 @@ function showMessages(idxs, messageNum) {
         mode: "updown",
         back: () => {
           messageList = [];
-          showBack();
+          goBack();
         },
       }, dir => {
         delete msg.new;
@@ -794,9 +884,7 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   else if (autoload.length) showMessages(autoload);
   else if (map && map.load) showMap(map);
   else if (music && music.load) showMusic(music);
-  else if (MESSAGES.some(m => m.new)) showMessages(MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new));
-  else if (MESSAGES.length) showMessages(MESSAGES.map((m, i) => i));
-  else showMenu();
+  else showMain();
 
   if ((!call || !call.load) && autoload.length) {
     // autoloaded for message(s): autoclose as well
@@ -807,7 +895,15 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
         print("Message not seen - reloading");
         load();
       }, unreadTimeoutSecs*1000);
-      ["touch", "drag", "swipe"].forEach(l => Bangle.on(l, clearUnreadTimeout));
+      let unreadHandlers={};
+      ["touch", "drag", "swipe"].forEach(l => {
+        unreadHandlers[l] = () =>{
+          ["touch", "drag", "swipe"].forEach(h => Bangle.removeListener(l,unreadHandlers[h]));
+          delete unreadHandlers;
+          clearUnreadTimeout();
+        }
+        Bangle.on(l, clearUnreadTimeout)
+      });
     }
   }
 }

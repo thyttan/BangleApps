@@ -15,40 +15,51 @@
   }
 
   const vibPatterns = [/*LANG*/"Off", ".", "-", "--", "-.-", "---"];
-  const mainmenu = {
-    "": {"title": /*LANG*/"Messages"},
-    "< Back": back,
-    /*LANG*/"Vibrate": {
-      value: Math.max(0, vibPatterns.indexOf(settings().vibrate)),
-      min: 0, max: vibPatterns.length,
-      format: v => vibPatterns[v] || "Off",
-      onchange: v => {
-        updateSetting("vibrate", vibPatterns[v]);
-      }
-    },
-    /*LANG*/"Repeat": {
-      value: settings().repeat,
-      min: 0, max: 10,
-      format: v => v ? v+"s" :/*LANG*/"Off",
-      onchange: v => updateSetting("repeat", v)
-    },
-    /*LANG*/"Unread timer": {
-      value: settings().unreadTimeout,
-      min: 0, max: settings().maxUnreadTimeout, step: 10,
-      format: v => v ? v+"s" :/*LANG*/"Off",
-      onchange: v => updateSetting("unreadTimeout", v)
-    },
-    /*LANG*/"Min Font": {
-      value: 0|settings().fontSize,
-      min: 0, max: 1,
-      format: v => [/*LANG*/"Small",/*LANG*/"Medium"][v],
-      onchange: v => updateSetting("fontSize", v)
-    },
-    /*LANG*/"Auto-Open Music": {
-      value: !!settings().openMusic,
-      format: v => v ?/*LANG*/"Yes" :/*LANG*/"No",
-      onchange: v => updateSetting("openMusic", v)
-    },
-  };
-  E.showMenu(mainmenu);
+  function showSettingsMenu() {
+    let mainmenu = {
+      "": {"title": /*LANG*/"Messages"},
+      "< Back": back,
+      /*LANG*/"Vibrate": {
+        value: Math.max(0, vibPatterns.indexOf(settings().vibrate)),
+        min: 0, max: vibPatterns.length,
+        format: v => vibPatterns[v] || "Off",
+        onchange: v => {
+          updateSetting("vibrate", vibPatterns[v]);
+        }
+      },
+      /*LANG*/"Repeat": {
+        value: settings().repeat,
+        min: 0, max: 10,
+        format: v => v ? v+"s" :/*LANG*/"Off",
+        onchange: v => updateSetting("repeat", v)
+      },
+      /*LANG*/"Unread timer": {
+        value: settings().unreadTimeout,
+        min: 0, max: settings().maxUnreadTimeout, step: 10,
+        format: v => v ? v+"s" :/*LANG*/"Off",
+        onchange: v => updateSetting("unreadTimeout", v)
+      },
+      /*LANG*/"Min Font": {
+        value: 0|settings().fontSize,
+        min: 0, max: 1,
+        format: v => [/*LANG*/"Small",/*LANG*/"Medium"][v],
+        onchange: v => updateSetting("fontSize", v)
+      },
+      /*LANG*/"Auto-Open Music": {
+        value: !!settings().openMusic,
+        format: v => v ?/*LANG*/"Yes" :/*LANG*/"No",
+        onchange: v => updateSetting("openMusic", v)
+      },
+    };
+    if (MESSAGES && MESSAGES.length) { // only when in-app
+      menu[/*LANG*/"Delete all"] = () => {
+        E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
+          if (isYes) MESSAGES = [];
+          showSettingsMenu();
+        });
+      };
+    }
+    E.showMenu(mainmenu);
+  }
+  showSettingsMenu();
 });
