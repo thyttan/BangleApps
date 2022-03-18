@@ -21,7 +21,6 @@
 */
 
 const B2 = process.env.HWVERSION>1;
-const REPLIES = {"ok": "👍", "nak": "👎", "nophone": "📵"};
 const Layout = require("Layout");
 let settings = require("Storage").readJSON("messages.settings.json", true) || {};
 const fontSmall = "6x8";
@@ -29,19 +28,6 @@ const fontMedium = g.getFonts().includes("6x15") ? "6x15" : "6x8:2";
 const fontBig = g.getFonts().includes("12x20") ? "12x20" : "6x8:2";
 const fontHuge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
 let active, last; // active screen, last active screen
-// hack for 2v10 firmware's lack of ':size' font handling
-try {
-  g.setFont("6x8:2");
-} catch(e) {
-  g._setFont = g.setFont;
-  g.setFont = function(f, s) {
-    if (f.includes(":")) {
-      f = f.split(":");
-      return g._setFont(f[0], f[1]);
-    }
-    return g._setFont(f, s);
-  };
-}
 
 /** this is a timeout if the app has started and is showing a single message
  but the user hasn't seen it (eg no user input) - in which case
@@ -136,66 +122,86 @@ function onMessageModified(idx) {
   if (toShow.length) showMessages(toShow);
   else if (["messages", "main"].includes(active)) showMain();
 }
+// end of functions used by lib.js
 
-function getPhoneImage() {
-  return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
-}
-function getMapImage() {
-  return atob("GRmBAAAAAAAAAAAAAAIAYAHx/wH//+D/+fhz75w/P/4f//8P//uH///D///h3f/w4P+4eO/8PHZ+HJ/nDu//g///wH+HwAYAIAAAAAAAAAAAAAA=");
-}
-function getMusicImage() {
-  return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
-}
-function getSettingsImage() {
-  return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
-}
-function getBackImage() {
-  return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
-}
-function getUnreadImage() {
-  return atob("HRiBAAAAH4AAAf4AAB/4AAHz4AAfn4AA/Pz/5+fj/z8/j/n5/j/P//j/Pn3j+PPPx+P8fx+Pw/x+AF/B4A78RiP3xwOPvHw+Pcf/+Ox//+NH//+If//+B///+A==");
-}
-function getNotificationImage() {
-  return atob("HBKBAD///8H///iP//8cf//j4//8f5//j/x/8//j/H//H4//4PB//EYj/44HH/Hw+P4//8fH//44///xH///g////A==");
-}
-function getFBIcon() {
-  return atob("GBiBAAAAAAAAAAAYAAD/AAP/wAf/4A/48A/g8B/g+B/j+B/n+D/n/D8A/B8A+B+B+B/n+A/n8A/n8Afn4APnwADnAAAAAAAAAAAAAA==");
-}
-function getPosImage() {
-  return atob("GRSBAAAAAYAAAcAAAeAAAfAAAfAAAfAAAfAAAfAAAfBgAfA4AfAeAfAPgfAD4fAA+fAAP/AAD/AAA/AAAPAAADAAAA==");
-}
-function getNegImage() {
-  return atob("FhaBADAAMeAB78AP/4B/fwP4/h/B/P4D//AH/4AP/AAf4AB/gAP/AB/+AP/8B/P4P4fx/A/v4B//AD94AHjAAMA=");
+function getIcon(icon) {
+  // TODO: icons should be 24x24px with 1bpp colors and transparency
+  switch(icon.toLowerCase()) {
+    case "ok":
+      return atob("FhmBAAHAAAeAAB4AAPgAA+AAH4AAfgAD8AAPwAD//+//////////////7//////////////v//+///7///v//8///gf/+A//wA==");
+    case "nak":
+      return atob("FhmBAA//wH//j//+P//8///7///v//+///7//////////////v//////////z//+D8AAPwAAfgAB+AAD4AAPgAAeAAB4AAHAAA==");
+    case "phone":
+      return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
+    case "nophone":
+      return atob("Hh6BAAAAAAGAAAAHAAAADgAAABwADwA4Af8AcA/8AOB/+AHH/+ADv/8AB//wAA/HAAAeAAACOAAADHAAAHjgAAPhwAAfg4AAfgcAAfwOAA/wHAA/wDgA/gBwA/gA4AfAAcAfAAOAGAAHAAAADgAAABgAAAAA");
+    case "map":
+      return atob("GRmBAAAAAAAAAAAAAAIAYAHx/wH//+D/+fhz75w/P/4f//8P//uH///D///h3f/w4P+4eO/8PHZ+HJ/nDu//g///wH+HwAYAIAAAAAAAAAAAAAA=");
+    case "music":
+      return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
+    case "settings":
+      return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
+    case "back":
+      return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
+    case "unread":
+      return atob("HRiBAAAAH4AAAf4AAB/4AAHz4AAfn4AA/Pz/5+fj/z8/j/n5/j/P//j/Pn3j+PPPx+P8fx+Pw/x+AF/B4A78RiP3xwOPvHw+Pcf/+Ox//+NH//+If//+B///+A==");
+    case "unknown":
+      return atob("Hh6BAAAAAAAAAAAAAAAAAAPwAAA/8AAB/+AAD//AAD4fAAHwPgAHwPgAAAPgAAAfAAAA/AAAD+AAAH8AAAHwAAAPgAAAPgAAAPgAAAAAAAAAAAAAAAAAAHAAAAPgAAAPgAAAPgAAAHAAAAAAAAAAAAAAAAAA");
+    case "trash":
+      return atob("GBiBAAAAAAAAAAB+AA//8A//8AYAYAYAYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAYAYAYAYAf/4AP/wAAAAAAAAA==");
+    case "gmail":
+    case "mail":
+    case "outlook mail":
+    case "sms message":
+    case "notification":
+      return atob("HBKBAD///8H///iP//8cf//j4//8f5//j/x/8//j/H//H4//4PB//EYj/44HH/Hw+P4//8fH//44///xH///g////A==");
+    case "pos":
+      return atob("GRSBAAAAAYAAAcAAAeAAAfAAAfAAAfAAAfAAAfAAAfBgAfA4AfAeAfAPgfAD4fAA+fAAP/AAD/AAA/AAAPAAADAAAA==");
+    case "neg":
+      return atob("FhaBADAAMeAB78AP/4B/fwP4/h/B/P4D//AH/4AP/AAf4AB/gAP/AB/+AP/8B/P4P4fx/A/v4B//AD94AHjAAMA=");
+    case "fb":
+    case "facebook":
+    case "messenger":
+      return atob("GBiBAAAAAAAAAAAYAAD/AAP/wAf/4A/48A/g8B/g+B/j+B/n+D/n/D8A/B8A+B+B+B/n+A/n8A/n8Afn4APnwADnAAAAAAAAAAAAAA==");
+    case "alarm":
+    case "alarmclockreceiver":
+      return atob("GBjBAP////8AAAAAAAACAEAHAOAefng5/5wTgcgHAOAOGHAMGDAYGBgYGBgYGBgYGBgYDhgYBxgMATAOAHAHAOADgcAB/4AAfgAAAAAAAAA=");
+    case "calendar":
+      return atob("GBiBAAAAAAAAAAAAAA//8B//+BgAGBgAGBgAGB//+B//+B//+B9m2B//+B//+Btm2B//+B//+Btm+B//+B//+A//8AAAAAAAAAAAAA==");
+    case "hangouts":
+      return atob("FBaBAAH4AH/gD/8B//g//8P//H5n58Y+fGPnxj5+d+fmfj//4//8H//B//gH/4A/8AA+AAHAABgAAAA=");
+    case "home assistant":
+      return atob("FhaBAAAAAADAAAeAAD8AAf4AD/3AfP8D7fwft/D/P8ec572zbzbNsOEhw+AfD8D8P4fw/z/D/P8P8/w/z/AAAAA=");
+    case "instagram":
+      return atob("GBiBAAAAAAAAAAAAAAAAAAP/wAYAYAwAMAgAkAh+EAjDEAiBEAiBEAiBEAiBEAjDEAh+EAgAEAwAMAYAYAP/wAAAAAAAAAAAAAAAAA==");
+    case "google home":
+      return atob("GBiCAAAAAAAAAAAAAAAAAAAAAoAAAAAACqAAAAAAKqwAAAAAqroAAAACquqAAAAKq+qgAAAqr/qoAACqv/6qAAKq//+qgA6r///qsAqr///6sAqv///6sAqv///6sAqv///6sA6v///6sA6v///qsA6qqqqqsA6qqqqqsA6qqqqqsAP7///vwAAAAAAAAAAAAAAAAA==");
+    case "skype":
+      return atob("GhoBB8AAB//AA//+Af//wH//+D///w/8D+P8Afz/DD8/j4/H4fP5/A/+f4B/n/gP5//B+fj8fj4/H8+DB/PwA/x/A/8P///B///gP//4B//8AD/+AAA+AA==");
+    case "slack":
+      return atob("GBiBAAAAAAAAAABAAAHvAAHvAADvAAAPAB/PMB/veD/veB/mcAAAABzH8B3v+B3v+B3n8AHgAAHuAAHvAAHvAADGAAAAAAAAAAAAAA==");
+    case "threema":
+      return atob("GBjB/4Yx//8AAAAAAAAAAAAAfgAB/4AD/8AH/+AH/+AP//AP2/APw/APw/AHw+AH/+AH/8AH/4AH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+    case "twitter":
+      return atob("GhYBAABgAAB+JgA/8cAf/ngH/5+B/8P8f+D///h///4f//+D///g///wD//8B//+AP//gD//wAP/8AB/+AB/+AH//AAf/AAAYAAA");
+    case "telegram":
+      return atob("GBiBAAAAAAAAAAAAAAAAAwAAHwAA/wAD/wAf3gD/Pgf+fh/4/v/z/P/H/D8P/Acf/AM//AF/+AF/+AH/+ADz+ADh+ADAcAAAMAAAAA==");
+    case "whatsapp":
+      return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
+    case "wordfeud":
+      return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
+  }
 }
 /*
 * icons should be 24x24px with 1bpp colors and transparancy
 */
 function getMessageImage(msg) {
   if (msg.img) return atob(msg.img);
+  if (msg.id==="music") return getIcon("Music");
+  if (msg.id==="back") return getIcon("Back");
   const s = (msg.src || "").toLowerCase();
-  if (s==="alarm" || s==="alarmclockreceiver") return atob("GBjBAP////8AAAAAAAACAEAHAOAefng5/5wTgcgHAOAOGHAMGDAYGBgYGBgYGBgYGBgYDhgYBxgMATAOAHAHAOADgcAB/4AAfgAAAAAAAAA=");
-  if (s==="calendar") return atob("GBiBAAAAAAAAAAAAAA//8B//+BgAGBgAGBgAGB//+B//+B//+B9m2B//+B//+Btm2B//+B//+Btm+B//+B//+A//8AAAAAAAAAAAAA==");
-  if (s==="facebook") return getFBIcon();
-  if (s==="hangouts") return atob("FBaBAAH4AH/gD/8B//g//8P//H5n58Y+fGPnxj5+d+fmfj//4//8H//B//gH/4A/8AA+AAHAABgAAAA=");
-  if (s==="home assistant") return atob("FhaBAAAAAADAAAeAAD8AAf4AD/3AfP8D7fwft/D/P8ec572zbzbNsOEhw+AfD8D8P4fw/z/D/P8P8/w/z/AAAAA=");
-  if (s==="instagram") return atob("GBiBAAAAAAAAAAAAAAAAAAP/wAYAYAwAMAgAkAh+EAjDEAiBEAiBEAiBEAiBEAjDEAh+EAgAEAwAMAYAYAP/wAAAAAAAAAAAAAAAAA==");
-  if (s==="gmail") return getNotificationImage();
-  if (s==="google home") return atob("GBiCAAAAAAAAAAAAAAAAAAAAAoAAAAAACqAAAAAAKqwAAAAAqroAAAACquqAAAAKq+qgAAAqr/qoAACqv/6qAAKq//+qgA6r///qsAqr///6sAqv///6sAqv///6sAqv///6sA6v///6sA6v///qsA6qqqqqsA6qqqqqsA6qqqqqsAP7///vwAAAAAAAAAAAAAAAAA==");
-  if (s==="mail") return getNotificationImage();
-  if (s==="messenger") return getFBIcon();
-  if (s==="outlook mail") return getNotificationImage();
-  if (s==="phone") return getPhoneImage();
-  if (s==="skype") return atob("GhoBB8AAB//AA//+Af//wH//+D///w/8D+P8Afz/DD8/j4/H4fP5/A/+f4B/n/gP5//B+fj8fj4/H8+DB/PwA/x/A/8P///B///gP//4B//8AD/+AAA+AA==");
-  if (s==="slack") return atob("GBiBAAAAAAAAAABAAAHvAAHvAADvAAAPAB/PMB/veD/veB/mcAAAABzH8B3v+B3v+B3n8AHgAAHuAAHvAAHvAADGAAAAAAAAAAAAAA==");
-  if (s==="sms message") return getNotificationImage();
-  if (s==="threema") return atob("GBjB/4Yx//8AAAAAAAAAAAAAfgAB/4AD/8AH/+AH/+AP//AP2/APw/APw/AHw+AH/+AH/8AH/4AH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-  if (s==="twitter") return atob("GhYBAABgAAB+JgA/8cAf/ngH/5+B/8P8f+D///h///4f//+D///g///wD//8B//+AP//gD//wAP/8AB/+AB/+AH//AAf/AAAYAAA");
-  if (s==="telegram") return atob("GBiBAAAAAAAAAAAAAAAAAwAAHwAA/wAD/wAf3gD/Pgf+fh/4/v/z/P/H/D8P/Acf/AM//AF/+AF/+AH/+ADz+ADh+ADAcAAAMAAAAA==");
-  if (s==="whatsapp") return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
-  if (s==="wordfeud") return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
-  if (msg.id==="music") return getMusicImage();
-  if (msg.id==="back") return getBackImage();
-  return getNotificationImage();
+
+  return getIcon(s) || getIcon("notification");
 }
 function getMessageImageCol(msg, def) {
   return {
@@ -330,7 +336,7 @@ function showMusic() {
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
-          {type: "img", pad: 10, bgCol: g.theme.bg2, col: g.theme.fg2, src: getMusicImage},
+          {type: "img", pad: 10, bgCol: g.theme.bg2, col: g.theme.fg2, src: getIcon("music")},
           {
             type: "v", fillx: 1, c: [
               {type: "txt", font: fontMedium, col: g.theme.fg2, bgCol: g.theme.bg2, label: artistName, pad: 2, id: "artist"},
@@ -400,105 +406,124 @@ function goBack() {
 }
 function showMain() {
   setActive("main");
-  let menu = {"": {title:/*LANG*/"Messages"}};
-  if (call) menu[/*LANG*/"Incoming call"] = () => showCall();
+  let grid = {"": {title:/*LANG*/"Messages", align: 0}};
+  if (call) grid[/*LANG*/"Incoming Call"] = {icon: "Phone", col: "#0f0", cb: () => showCall()};
   // showMessage wants MESSAGES indices
   const unread = MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new),
     all = MESSAGES.map((m, i) => i);
   if (unread.length) {
-    menu[unread.length+" "+/*LANG*/"New"] = () => showMessages(unread);
-    if (all.length) menu[/*LANG*/"All"+` (${all.length})`] = () => showMessages(all);
+    grid[unread.length+" "+/*LANG*/"New"] = {icon: "Unread", col: "#ff0", cb: () => showMessages(unread)};
+    if (all.length) grid[/*LANG*/"All"+` (${all.length})`] = {icon: "Notification", col: "#0ff", cb: () => showMessages(all)};
   } else {
     const allLabel = all.length+" "+(all.length===1 ?/*LANG*/"Message" :/*LANG*/"Messages");
-    if (all.length) menu[allLabel] = () => showMessages(all);
-    else menu[/*LANG*/"No Messages"] = undefined;
+    if (all.length) grid[allLabel] = {icon: "Notification", col: "#0ff", cb: () => showMessages(all)};
+    else grid[/*LANG*/"No Messages"] = {icon: "Neg", col: "#fff"};
   }
-  if (map) menu[/*LANG*/"Map"] = () => showMap();
-  if (music) menu[/*LANG*/"Music"] = () => showMusic();
-  menu[/*LANG*/"Settings"] = () => showSettings();
-  if (B2) showGrid(menu);
-  else E.showMenu(menu);
+  if (map) grid[/*LANG*/"Map"] = {icon: "Map", col: "#f0f", cb: () => showMap()};
+  if (music) grid[/*LANG*/"Music"] = {icon: "Music", col: "#f00", cb: () => showMusic()};
+  grid[/*LANG*/"Settings"] = {icon: "Settings", col: "#000", cb: () => showSettings()};
+  if (B2) showGrid(grid);
+  else showGridMenu(grid);
 }
+/**
+ * Show grid items as menu
+ * @param items
+ */
+function showGridMenu(items) {
+  let menu = {};
+  for(let key in items) {
+    menu[key] = items[key].cb;
+  }
+  return E.showMenu(menu);
+}
+/**
+ * Show grid of labeled buttons,
+ *
+ * items:
+ *   {
+ *     cb: callback,
+ *     img: button image,
+ *     icon: icon name, // instead of img
+ *     col: icon color,
+ *   }
+ * "" item is options:
+ *   {
+ *     title: string,
+ *     back: callback,
+ *     rows/cols: (optional) fit to this many columns/rows, omit for automatic fit
+ *     align: bottom row alignment if items don't fit perfectly into a grid
+ *            -1: left
+ *             1: right
+ *             0: left, but move final button to the right
+ *             undefined: center
+ *   }
+ * @param items
+ */
 function showGrid(items) {
   clearStuff();
   const options = items[""] || {},
-    keys = Object.keys(items).filter(k => k),
-    rows = Math.round(Math.sqrt(keys.length)),
-    cols = Math.ceil(keys.length/rows);
-  function getIcon(label) {
-    // main
-    if (label=== /*LANG*/"Incoming call") return getPhoneImage();
-    if (label=== /*LANG*/"No Messages") return getNegImage();
-    if (label.endsWith(/*LANG*/"New")) return getUnreadImage();
-    if (label.endsWith(/*LANG*/"Messages") || label.endsWith(/*LANG*/"Message")) return getNotificationImage();
-    if (label.startsWith(/*LANG*/"All")) return getNotificationImage();
-    if (label=== /*LANG*/"Map") return getMapImage();
-    if (label=== /*LANG*/"Music") return getMusicImage();
-    if (label=== /*LANG*/"Settings") return getSettingsImage();
-    // message actions
-    if (label===/*LANG*/"Dismiss") return getPosImage();
-    if (label==="ok") return getPosImage();
-    if (label==="nak") return getNegImage();
-    if (label==="nophone") return getPhoneImage();
+    back = options.back || items["< Back"];
+  let keys;
+  if (B2) {
+    keys = Object.keys(items).filter(k => k!=="" && k!=="< Back");
+  } else {
+    keys = Object.keys(items).filter(k => k!=="");
+    if (back && !keys.includes("< Back")) {
+      items["< Back"] = back;
+      keys.unshift("< Back");
+    }
   }
-  let row = {type: "h", filly: 1, c: []},
-    l = {type: "v", c: []};
-  // unshift in reverse order: in non-full grid the top row gets more space
-  keys.reverse().forEach(k => {
-    const item = items[k];
-    row.c.unshift({
-      type: "v", pad: 2, fillx: 1, c: [
+  let cols;
+  if (options.cols) {
+    cols = options.cols;
+  } else if (options.rows) {
+    cols = Math.ceil(keys.length/options.rows);
+  } else {
+    const rows = Math.round(Math.sqrt(keys.length));
+    cols = Math.ceil(keys.length/rows);
+  }
+
+  let l = {type: "v", c: []};
+  if (options.title) {
+    const title = g.setFont(fontBig).wrapString(options.title, Bangle.appRect.w).join("\n");
+    l.c.push({type: "txt", label: title, font: fontBig, fillx: 1});
+  }
+  const w = Bangle.appRect.w/cols, // set explicit width, because labels can stick out
+    bgs = [g.theme.bgH, g.theme.bg2], // background colors used for buttons
+    newRow = () => ({type: "h", filly: 1, c: []});
+  let row = newRow();
+  keys.forEach(key => {
+    const item = items[key],
+      label = g.setFont(fontSmall).wrapString(key, w).join("\n");
+    let color = item.col;
+    if (color && bgs.includes(g.setColor(color).getColor())) color = undefined; // make sure button is not invisible
+    row.c.push({
+      type: "v", pad: 2, width: w, c: [
         {
           type: "btn",
-          src: getIcon(k),
-          cb: item,
+          src: item.img || getIcon(item.icon) || getIcon("Unknown"),
+          col: color,
+          cb: item.cb,
         },
         {height: 2},
-        {type: "txt", label: k, font: fontSmall},
+        {type: "txt", label: label, font: fontSmall},
       ]
     });
     if (row.c.length>=cols) {
-      l.c.unshift(row);
-      row = {type: "h", filly: 1, c: []};
+      l.c.push(row);
+      row = newRow();
     }
   });
-  if (row.c.length) l.c.unshift(row);
-  if (options.title) l.c.unshift({type: "txt", label: options.title, font: fontBig, fillx: 1});
-
-  layout = new Layout(l);
-  layout.render();
-  // lifted from Bangle.setUI (can't use setUI: layout is using it)
-  if (options.back) {
-    if (WIDGETS.back) WIDGETS.back.remove();
-    let touchHandler, btnWatch;
-    if (B2) {
-      touchHandler = (_, e) => {
-        if (e.y<24 && e.x<48) options.back();
-      };
-      btnWatch = setWatch(function() {
-        options.back();
-      }, BTN1, {edge: "falling"});
-    } else {
-      touchHandler = (z) => {
-        if (z===1) options.back();
-      };
-    }
-    WIDGETS = Object.assign({
-      back: {
-        area: "tl", width: 24,
-        draw: e => g.reset().setColor("#f00").drawImage(atob("GBiBAAAYAAH/gAf/4A//8B//+D///D///H/P/n+H/n8P/n4f/vwAP/wAP34f/n8P/n+H/n/P/j///D///B//+A//8Af/4AH/gAAYAA=="), e.x, e.y),
-        remove: () => {
-          if (btnWatch) clearWatch(btnWatch);
-          Bangle.removeListener("touch", touchHandler);
-          g.reset().clearRect({x: WIDGETS.back.x, y: WIDGETS.back.y, w: 24, h: 24});
-          delete WIDGETS.back;
-          Bangle.drawWidgets();
-        }
-      }
-    }, global.WIDGETS);
-    Bangle.on("touch", touchHandler);
-    Bangle.drawWidgets();
+  if (row.c.length) {
+    const filler = {width: w*(cols-row.c.length)};
+    if (options.align===1) row.c.push(filler);
+    if (options.align===0) row.c.splice(row.c.length-1, 0, filler);
+    if (options.align=== -1) row.c.unshift(filler);
+    l.c.push(row);
   }
+
+  layout = new Layout(l, {back: back});
+  layout.render();
 }
 
 function showSettings() {
@@ -564,7 +589,7 @@ function showCall() {
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
-          {type: "img", pad: 10, src: getMessageImage(call), col: getMessageImageCol(call)},
+          {type: "img", pad: 10, src: getIcon("phone"), col: getMessageImageCol(call)},
           {
             type: "v", fillx: 1, c: [
               {type: "txt", font: fontSmall, label: call.src ||/*LANG*/"Message", bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2, halign: 1},
@@ -576,9 +601,10 @@ function showCall() {
       {type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2},
       {
         type: "h", fillx: 1, c: [
-          {type: B2 ? "btn" : "img", src: getNegImage(), cb: () => respond(false)},
+          // button callbacks won't actually be used: setUI below overrides the touchHandler set by Layout
+          {type: B2 ? "btn" : "img", src: getIcon("Neg"), cb: () => respond(false)},
           {fillx: 1},
-          {type: B2 ? "btn" : "img", src: getPosImage(), cb: () => respond(true)},
+          {type: B2 ? "btn" : "img", src: getIcon("Pos"), cb: () => respond(true)},
         ]
       }
     ]
@@ -644,34 +670,36 @@ function getMessageHeight(msg, footer) {
   return h;
 }
 /**
- * Dismiss message, and delete it from list
+ * Send message response, and delete it from list
+ * @param {string|boolean} reply Response text, false to dismiss (true to open on phone)
  */
-function dismissMessage() {
+function respondToMessage(reply) {
   let idx = messageIdx, msg = MESSAGES[idx];
-  Bangle.messageResponse(msg, false);
-  MESSAGES.splice(idx, 1);
+  Bangle.messageResponse(msg, reply);
   const inList = messageList.indexOf(idx);
-  if (inList>=0) messageList.splice(inList, 1);
+  if (reply===false) { // delete message
+    MESSAGES.splice(idx, 1);
+    if (inList>=0) messageList.splice(inList, 1);
+  }
   if (messageList.length<1) goBack(); // no more messages
   else showMessages(messageList, inList);
 }
 function showMessageActions() {
   clearStuff();
-  let menu = {
+  let grid = {
     "": {
       title: /*LANG*/"Message",
       back: () => showMessages(messageList, messageIdx),
+      cols: 3, // fit all replies on first row, dismiss on bottom
     }
   };
-  for(let label in REPLIES) {
-    menu[label] = () => {
-      Bangle.messageResponse(MESSAGES[messageIdx], REPLIES[label]);
-      showMessages(messageList, messageIdx);
-    };
-  }
-  menu[/*LANG*/"Dismiss"] = () => dismissMessage();
-  if (B2) showGrid(menu);
-  else E.showMenu(menu);
+  grid[/*LANG*/"OK"] = {icon: "Ok", col: "#0f0", cb: () => respondToMessage("👍")};
+  grid[/*LANG*/"Nak"] = {icon: "Nak", col: "#f00", cb: () => respondToMessage("👎")};
+  grid[/*LANG*/"No Phone"] = {icon: "NoPhone", col: "#f0f", cb: () => respondToMessage("📵")};
+
+  grid[/*LANG*/"Dismiss"] = {icon: "Trash", col: "#ff0", cb: () => respondToMessage(false)};
+  if (B2) showGrid(grid);
+  else showGridMenu(grid);
 }
 /**
  * Show a list of messages
@@ -884,7 +912,12 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   else if (autoload.length) showMessages(autoload);
   else if (map && map.load) showMap(map);
   else if (music && music.load) showMusic(music);
-  else showMain();
+  else if (MESSAGES.length) { // not autoloaded, but we have messages to show
+    last = "main"; // prevent "back" from loading clock
+    const unread = MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new),
+      old = MESSAGES.map((m, i) => i).filter(i => !MESSAGES[i].new);
+    showMessages(unread.concat(old));
+  } else showMain();
 
   if ((!call || !call.load) && autoload.length) {
     // autoloaded for message(s): autoclose as well
@@ -895,14 +928,14 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
         print("Message not seen - reloading");
         load();
       }, unreadTimeoutSecs*1000);
-      let unreadHandlers={};
+      let unreadHandlers = {};
       ["touch", "drag", "swipe"].forEach(l => {
-        unreadHandlers[l] = () =>{
-          ["touch", "drag", "swipe"].forEach(h => Bangle.removeListener(l,unreadHandlers[h]));
+        unreadHandlers[l] = () => {
+          ["touch", "drag", "swipe"].forEach(h => Bangle.removeListener(l, unreadHandlers[h]));
           delete unreadHandlers;
           clearUnreadTimeout();
-        }
-        Bangle.on(l, clearUnreadTimeout)
+        };
+        Bangle.on(l, clearUnreadTimeout);
       });
     }
   }

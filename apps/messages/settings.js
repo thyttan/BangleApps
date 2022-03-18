@@ -4,6 +4,7 @@
     if (settings.vibrate===undefined) settings.vibrate = ".";
     if (settings.repeat===undefined) settings.repeat = 4;
     if (settings.unreadTimeout===undefined) settings.unreadTimeout = 60;
+    settings.showRead = !!settings.showRead;
     settings.openMusic = !!settings.openMusic;
     settings.maxUnreadTimeout = 240;
     return settings;
@@ -16,7 +17,7 @@
 
   const vibPatterns = [/*LANG*/"Off", ".", "-", "--", "-.-", "---"];
   function showSettingsMenu() {
-    let mainmenu = {
+    let menu = {
       "": {"title": /*LANG*/"Messages"},
       "< Back": back,
       /*LANG*/"Vibrate": {
@@ -45,6 +46,11 @@
         format: v => [/*LANG*/"Small",/*LANG*/"Medium"][v],
         onchange: v => updateSetting("fontSize", v)
       },
+      /*LANG*/"Show Read": {
+        value: !!settings().showRead,
+        format: v => v ?/*LANG*/"Yes" :/*LANG*/"No",
+        onchange: v => updateSetting("showRead", v)
+      },
       /*LANG*/"Auto-Open Music": {
         value: !!settings().openMusic,
         format: v => v ?/*LANG*/"Yes" :/*LANG*/"No",
@@ -59,7 +65,7 @@
         });
       };
     }
-    E.showMenu(mainmenu);
+    E.showMenu(menu);
   }
   showSettingsMenu();
 });

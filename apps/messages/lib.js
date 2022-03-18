@@ -52,14 +52,17 @@ exports.load = function() {
 };
 
 /**
- * Check if there are any unread messages
- * @returns {boolean}
+ * Check if there are any messages
+ * @returns {string} "new"/"old"/"none"
  */
-exports.haveNew = function() {
+exports.status = function() {
   try {
     const n = e => (e.new && !["music", "Maps"].includes(e.id));
-    if ("undefined"!== typeof MESSAGES) return MESSAGES.some(n);
-    return exports.load().some(n);
+    let messages;
+    if ("undefined"!== typeof MESSAGES) messages = MESSAGES;
+    else messages = exports.load();
+    if (!messages.length) return "none";
+    return messages.some(n) ? "new" : "old";
   } catch(e) {
     return false; // don't bother e.g. the widget with errors
   }
@@ -178,8 +181,13 @@ exports.pushMessage = function(event) {
   }
   // not in app: append to stored list of messages
   if (event.t==="remove") {
-    // if we've removed the last new message, hide the widget
-    if (global.WIDGETS && WIDGETS.message && !exports.haveNew()) WIDGETS.messages.hide();
+    // if we removed the last message, hide the widget
+    const status = exports.status();
+    if (global.WIDGETS && WIDGETS.message
+      && status!=="new"
+      && (status==="none" || !(require("Storage").readJSON("messages.settings.json", true) || {}).showRead)) {
+      WIDGETS.messages.hide();
+    }
   }
   if ((event.t==="remove" || event.t==="modify") && Math.random()>=0.8) {
     // perform housekeeping every so often
@@ -220,5 +228,5 @@ exports.clearAll = function() {
   // if we have a widget, update it
   if (global.WIDGETS && WIDGETS.messages) WIDGETS.messages.hide();
   // update app if in app
-  if (inApp&&["messages","menu"].includes(active)) showMenu();
+  if (inApp && ["messages", "menu"].includes(active)) showMenu();
 };

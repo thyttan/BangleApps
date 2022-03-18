@@ -10,14 +10,24 @@ WIDGETS["messages"] = {
     if (!this.width) return;
     const c = (Date.now()-this.t)/1000;
     g.reset().clearRect(this.x, this.y, this.x+this.width, this.y+this.iconwidth);
-    g.drawImage((c&1) ? atob("GBiBAAAAAAAAAAAAAAAAAAAAAB//+DAADDAADDAADDwAPD8A/DOBzDDn/DA//DAHvDAPvjAPvjAPvjAPvh///gf/vAAD+AAB8AAAAA==") : atob("GBiBAAAAAAAAAAAAAAAAAAAAAB//+D///D///A//8CP/xDj/HD48DD+B8D/D+D/3vD/vvj/vvj/vvj/vvh/v/gfnvAAD+AAB8AAAAA=="), this.x, this.y);
-    let settings = require("Storage").readJSON("messages.settings.json", true) || {};
-    if (settings.repeat===undefined) settings.repeat = 4;
-    if (c<120 && (Date.now()-this.l)>settings.repeat*1000) {
-      this.l = Date.now();
-      WIDGETS["messages"].buzz(); // buzz every 4 seconds
+    if (this.status === "new") {
+      g.drawImage((c&1)
+        ? atob("GBiBAAAAAAAAAAAAAAAAAAAAAB//+DAADDAADDAADDwAPD8A/DOBzDDn/DA//DAHvDAPvjAPvjAPvjAPvh///gf/vAAD+AAB8AAAAA==")
+        : atob("GBiBAAAAAAAAAAAAAAAAAAAAAB//+D///D///A//8CP/xDj/HD48DD+B8D/D+D/3vD/vvj/vvj/vvj/vvh/v/gfnvAAD+AAB8AAAAA==")
+        , this.x, this.y);
+      let settings = require("Storage").readJSON("messages.settings.json", true) || {};
+      if (settings.repeat===undefined) settings.repeat = 4;
+      if (c<120 && (Date.now()-this.l)>settings.repeat*1000) {
+        this.l = Date.now();
+        WIDGETS["messages"].buzz(); // buzz every 4 seconds
+      }
+      WIDGETS["messages"].i = setTimeout(() => WIDGETS["messages"].draw(), 1000);
+    } else { // only old messages: no blinking
+      g.drawImage(
+        // TODO: find better icon (more similar to other two above)
+        atob("GBiBAAAAAAAAAAAAAAAAAB//+D///DAADDgAHDwAPDcA7DPDzDDnDDA8DDAYDDAADDAADDAADDAADD///B//+AAAAAAAAAAAAAAAAA==")
+        , this.x, this.y);
     }
-    WIDGETS["messages"].i = setTimeout(() => WIDGETS["messages"].draw(), 1000);
     if (process.env.HWVERSION>1) Bangle.on("touch", this.touch);
   }, show: function(quiet) {
     WIDGETS["messages"].t = Date.now(); // first time
@@ -52,6 +62,9 @@ message but then the watch was never viewed. In that case we don't
 want to buzz but should still show that there are unread messages. */
 if (global.MESSAGES===undefined) {
   (function() {
-    if (require("messages").haveNew()) WIDGETS["messages"].show(true);
+    const s = require("messages").status();
+    WIDGETS["messages"].status = s;
+    if (s==="new" || (s==="old" && (require("Storage").readJSON("messages.settings.json", true) || {}).showRead))
+      WIDGETS["messages"].show(true);
   })();
 }

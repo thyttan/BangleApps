@@ -19,6 +19,7 @@ to the clock where a ringing bell will be shown in the Widget bar.
 * `Min Font` - The minimum font size used when displaying messages on the screen. A bigger font
 is chosen if there isn't much message text, but this specifies the smallest the font should get before
 it starts getting clipped.
+* `Show Read` - Should the widget also show when there are only old messages?
 * `Auto-Open Music` - Should the app automatically open when the phone starts playing music?
 
 ## New Messages
