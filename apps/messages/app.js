@@ -27,7 +27,7 @@ const fontSmall = "6x8";
 const fontMedium = g.getFonts().includes("6x15") ? "6x15" : "6x8:2";
 const fontBig = g.getFonts().includes("12x20") ? "12x20" : "6x8:2";
 const fontHuge = g.getFonts().includes("6x15") ? "6x15:2" : "6x8:4";
-let active, last; // active screen, last active screen
+let active, back; // active screen, last active screen
 
 /** this is a timeout if the app has started and is showing a single message
  but the user hasn't seen it (eg no user input) - in which case
@@ -309,10 +309,11 @@ function showMusic() {
 
   function fmtTime(s) {
     const m = Math.floor(s/60);
-    s = (parseInt(s%60)).toString().padStart(2, 0);
+    s = (s%60).toString().padStart(2, "0");
     return m+":"+s;
   }
   function reduceStringAndPad(text, offset, maxLen) {
+    if (text.length<=maxLen) return text;
     const sliceLength = offset+maxLen>text.length ? text.length-offset : maxLen;
     return text.substring(offset, offset+sliceLength).padEnd(maxLen, " ");
   }
@@ -332,7 +333,7 @@ function showMusic() {
   }
   updateLabels();
 
-  let layout = new Layout({
+  layout = new Layout({
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
@@ -345,8 +346,8 @@ function showMusic() {
           }
         ]
       },
-      {type: "txt", font: fontHuge, bgCol: g.theme.bg, label: trackName, fillx: 1, filly: 1, pad: 2, id: "track"},
-      {type: "txt", font: fontMedium, bgCol: g.theme.bg, label: music.dur ? fmtTime(music.dur) : "--:--"}
+      {type: "txt", halign: 0, font: fontHuge, bgCol: g.theme.bg, label: trackName, fillx: 1, filly: 1, pad: 2, id: "track"},
+      music.dur ? {type: "txt", font: fontMedium, bgCol: g.theme.bg, label: fmtTime(music.dur)} : {}
     ]
   });
   layout.render();
@@ -392,16 +393,16 @@ function clearStuff() {
 }
 function setActive(screen, args) {
   clearStuff();
-  if (![last, screen].includes(active)) last = active;
+  if (![back, screen].includes(active)) back = active;
   if (screen==="messages") messageList = args;
   active = screen;
 }
 function goBack() {
-  if (last==="call" && call) showCall();
-  else if (last==="map" && map) showMap();
-  else if (last==="music" && music) showMusic();
-  else if (last==="messages" && messageList.length) showMessages(messageList.filter(idx => MESSAGES[idx]));
-  else if (last) showMain(); // previous screen was "main", or no longer valid
+  if (back==="call" && call) showCall();
+  else if (back==="map" && map) showMap();
+  else if (back==="music" && music) showMusic();
+  else if (back==="messages" && messageList.length) showMessages(messageList.filter(idx => MESSAGES[idx]));
+  else if (back) showMain(); // previous screen was "main", or no longer valid
   else load(); // no previous screen: go back to clock
 }
 function showMain() {
@@ -417,7 +418,7 @@ function showMain() {
   } else {
     const allLabel = all.length+" "+(all.length===1 ?/*LANG*/"Message" :/*LANG*/"Messages");
     if (all.length) grid[allLabel] = {icon: "Notification", col: "#0ff", cb: () => showMessages(all)};
-    else grid[/*LANG*/"No Messages"] = {icon: "Neg", col: "#fff"};
+    else grid[/*LANG*/"No Messages"] = {icon: "Neg", col: "#fff", cb: () => load()};
   }
   if (map) grid[/*LANG*/"Map"] = {icon: "Map", col: "#f0f", cb: () => showMap()};
   if (music) grid[/*LANG*/"Music"] = {icon: "Music", col: "#f00", cb: () => showMusic()};
@@ -624,51 +625,6 @@ function showCall() {
     }
   });
 }
-function getMessageHeight(msg, footer) {
-  if (msg.h) return msg.h;
-  let h = 0, lines;
-
-  // header:
-  h += 4; // 2x2 padding
-  h += g.setFont(fontSmall).stringMetrics(msg.src).height;
-  let w = g.getWidth()-46; // room for icon(22)+padding(2x10+2x2)
-  let title = msg.title, titleFont = fontHuge;
-  if (title) {
-    h += 2; // padding
-    if (g.setFont(titleFont).stringWidth(title)>w) {
-      titleFont = fontBig;
-      if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
-        titleFont = fontMedium;
-      }
-    }
-    lines = g.setFont(titleFont).wrapString(title, w);
-    h += g.stringMetrics(lines.join("\n")).height;
-  }
-  h = Math.max(42, h); // at least icon(22)+padding(2x10)
-
-  // body:
-  h += 4; // 2x2 padding
-  w = g.getWidth()-10;
-  let body = msg.body, bodyFont = fontHuge;
-  if (g.setFont(bodyFont).stringWidth(body)>w*2) {
-    bodyFont = fontBig;
-    if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
-      bodyFont = fontMedium;
-    }
-  }
-  lines = g.setFont(bodyFont).wrapString(body, w);
-  h += g.stringMetrics(lines.join("\n")).height;
-
-  // footer:
-  if (footer) {
-    h += g.setFont(fontSmall).stringMetrics(footer).height;
-  }
-
-  // remember for next time
-  msg.h = h;
-
-  return h;
-}
 /**
  * Send message response, and delete it from list
  * @param {string|boolean} reply Response text, false to dismiss (true to open on phone)
@@ -685,10 +641,14 @@ function respondToMessage(reply) {
   else showMessages(messageList, inList);
 }
 function showMessageActions() {
+  let title = MESSAGES[messageIdx].title || "";
+  if (g.setFont(fontBig).stringMetrics(title).width>Bangle.appRect.w) {
+    title = g.setFont(fontBig).wrapString("..."+title, Bangle.appRect.w)[0].substring(3)+"...";
+  }
   clearStuff();
   let grid = {
     "": {
-      title: /*LANG*/"Message",
+      title: title ||/*LANG*/"Message",
       back: () => showMessages(messageList, messageIdx),
       cols: 3, // fit all replies on first row, dismiss on bottom
     }
@@ -747,6 +707,12 @@ function showMessages(idxs, messageNum) {
     };
     layout.render();
     delete g.reset;
+    if (h>ar.h) {
+      const sbh = ar.h/h*ar.h, // scrollbar height
+        y1 = ar.y+offset/h*ar.h, y2 = y1+sbh;
+      g.setColor(g.theme.bg).drawLine(ar.x2, ar.y, ar.x2, ar.y2);
+      g.setColor(g.theme.fg).drawLine(ar.x2, y1, ar.x2, y2);
+    }
   };
   let buzzing = false, moving = false;
   const buzzOnce = () => {
@@ -754,14 +720,19 @@ function showMessages(idxs, messageNum) {
     buzzing = true;
     Bangle.buzz(50).then(() => setTimeout(() => {buzzing = false;}, 500));
   };
-  const showMsg = num => {
+  const showMessage = num => {
     clearStuff();
     n = num;
     idx = idxs[n];
     messageIdx = idx;
     msg = MESSAGES[idx];
-    let footer = idxs.length>1 ? `${n+1}/${idxs.length}` : "";
-    h = Math.max(getMessageHeight(msg, footer), ar.h);
+    let footer = "";
+    if (idxs.length>1) {
+      if (n>0) footer += "\0"+atob("CAiBAABBIhRJIhQI"); // swipe to prev
+      footer += ` ${n+1}/${idxs.length} `;
+      if (n<idxs.length-1) footer += "\0"+atob("CAiBABAoRJIoRIIA"); // swipe to next
+    }
+    h = Math.max(getMessageHeight(msg), ar.h);
     offset = 0;
     oldOffset = 0;
     layout = getMessageLayout(msg, footer);
@@ -774,6 +745,7 @@ function showMessages(idxs, messageNum) {
       Bangle.setUI({
         mode: "custom",
         back: () => {
+          delete msg.new;
           messageList = [];
           goBack();
         },
@@ -791,7 +763,7 @@ function showMessages(idxs, messageNum) {
             } else if (n<idxs.length-1) { // bottom reached: show next
               if (!moving) { // don't scroll right through to next message
                 Bangle.buzz(30);
-                showMsg(n+1);
+                showMessage(n+1);
               }
             } else {
               buzzOnce(); // already at bottom of last message
@@ -802,19 +774,26 @@ function showMessages(idxs, messageNum) {
             } else if (n>0) { // top reached: show prev
               if (!moving) { // don't scroll right through to previous message
                 Bangle.buzz(30);
-                showMsg(n-1);
+                showMessage(n-1);
               }
             } else {
               buzzOnce(); // already at top of first message
             }
           }
           if (!e.b) moving = false; // touch stopped: we can swipe to another message (if we reached the top/bottom)
-        }
+        },
+        touch: (side, xy) => {
+          // setUI overrides Layout listeners, so we need to check for button presses
+          delete msg.new;
+          const b = layout.button;
+          if (xy.x>=b.x && xy.x<=b.x+b.w && xy.y>b.y && xy.y<=b.y+b.w) b.cb();
+        },
       });
-    } else {
+    } else { // Bangle.js 1
       Bangle.setUI({
         mode: "updown",
         back: () => {
+          delete msg.new;
           messageList = [];
           goBack();
         },
@@ -826,7 +805,7 @@ function showMessages(idxs, messageNum) {
             move(+STEP);
           } else if (n<idxs.length-1) { // bottom reached: show next
             Bangle.buzz(30);
-            showMsg(n+1);
+            showMessage(n+1);
           } else {
             buzzOnce(); // already at bottom of last message
           }
@@ -835,22 +814,72 @@ function showMessages(idxs, messageNum) {
             move(-STEP);
           } else if (n>0) { // top reached: show previous
             Bangle.buzz(30);
-            showMsg(n-1);
+            showMessage(n-1);
           } else {
             buzzOnce(); // already at top of first message
           }
         }
       });
+      Bangle.swipeHandler = dir => {
+        delete msg.new;
+        if (dir===1) goBack();
+        else if (dir=== -1) showMessageActions();
+      };
+      Bangle.on("swipe", Bangle.swipeHandler);
     }
   };
-  showMsg(messageNum);
+  showMessage(messageNum);
+}
+
+function getMessageHeight(msg) {
+  if (msg.h) return msg.h;
+  let h = 0, lines;
+
+  // header:
+  h += 4; // 2x2 padding
+  h += g.setFont(fontSmall).stringMetrics(msg.src).height;
+  let w = Bangle.appRect.w-50;
+  let title = msg.title, titleFont = fontHuge;
+  if (title) {
+    h += 2; // padding
+    if (g.setFont(titleFont).stringWidth(title)>w) {
+      titleFont = fontBig;
+      if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
+        titleFont = fontMedium;
+      }
+    }
+    lines = g.setFont(titleFont).wrapString(title, w);
+    h += g.stringMetrics(lines.join("\n")).height;
+  }
+  h = Math.max(42, h); // at least icon(22)+padding(2x10)
+
+  // body:
+  h += 4; // 2x2 padding
+  w = Bangle.appRect.w-10;
+  let body = msg.body || "", bodyFont = fontHuge;
+  if (g.setFont(bodyFont).stringWidth(body)>w*2) {
+    bodyFont = fontBig;
+    if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
+      bodyFont = fontMedium;
+    }
+  }
+  lines = g.setFont(bodyFont).wrapString(body, w);
+  h += g.stringMetrics(lines.join("\n")).height;
+
+  // footer:
+  h += 2+g.setFont(fontSmall).stringMetrics("footer").height;
+
+  // remember for next time
+  msg.h = h;
+
+  return h;
 }
 
 function getMessageLayout(msg, footer) {
   // Normal text message display
   let title = msg.title, titleFont = fontHuge, w;
   if (title) {
-    w = g.getWidth()-48;
+    w = Bangle.appRect.w-50;
     if (g.setFont(titleFont).stringWidth(title)>w) {
       titleFont = fontBig;
       if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
@@ -860,23 +889,25 @@ function getMessageLayout(msg, footer) {
     title = g.setFont(titleFont).wrapString(title, w).join("\n");
   }
   // If body of message is only two lines long w/ large font, use large font.
-  let body = msg.body, bodyFont = fontHuge;
-  if (body) {
-    w = g.getWidth()-10;
-    if (g.setFont(bodyFont).stringWidth(body)>w*2) {
-      bodyFont = fontBig;
-      if (settings.fontSize!==1 && g.stringWidth(body)>w*3) {
-        bodyFont = fontMedium;
-      }
+  let body = msg.body || "", bodyFont = fontHuge;
+  w = Bangle.appRect.w-10;
+  if (g.setFont(bodyFont).stringWidth(body)>w*2) {
+    bodyFont = fontBig;
+    if (settings.fontSize!==1 && g.stringWidth(body)>w*3) {
+      bodyFont = fontMedium;
     }
-    body = g.setFont(bodyFont).wrapString(msg.body, w).join("\n");
   }
+  body = g.setFont(bodyFont).wrapString(msg.body, w).join("\n");
 
   layout = new Layout({
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
-          {type: "img", pad: 10, src: getMessageImage(msg), col: getMessageImageCol(msg)},
+          {
+            id: "button", type: B2 ? "btn" : "img", pad: 10,
+            src: getMessageImage(msg), col: getMessageImageCol(msg),
+            cb: () => showMessageActions(),
+          },
           {
             type: "v", fillx: 1, c: [
               {type: "txt", font: fontSmall, label: msg.src ||/*LANG*/"Message", bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2, halign: 1},
@@ -886,7 +917,16 @@ function getMessageLayout(msg, footer) {
         ]
       },
       {type: "txt", font: bodyFont, label: body, fillx: 1, filly: 1, pad: 2},
-      footer ? {type: "txt", font: fontSmall, label: footer, halign: 1} : {},
+      {height: 2},
+      {
+        type: "h", c: [
+          {type: "img", src: atob("CAiBACBA/EIiAnwA")}, // back
+          {type: "img", src: atob("CAiBAEgkEgkSJEgA")}, // >>
+          {type: "txt", font: fontSmall, label: footer, fillx: 1, halign: 1},
+          {type: "img", src: atob("CAiBABIkSJBIJBIA")}, // <<
+          {type: "img", src: atob("CAiBAP8AAP8AAP8A")}, // = ("hamburger menu")
+        ]
+      },
     ]
   });
   return layout;
@@ -913,7 +953,7 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   else if (map && map.load) showMap(map);
   else if (music && music.load) showMusic(music);
   else if (MESSAGES.length) { // not autoloaded, but we have messages to show
-    last = "main"; // prevent "back" from loading clock
+    back = "main"; // prevent "back" from loading clock
     const unread = MESSAGES.map((m, i) => i).filter(i => MESSAGES[i].new),
       old = MESSAGES.map((m, i) => i).filter(i => !MESSAGES[i].new);
     showMessages(unread.concat(old));
