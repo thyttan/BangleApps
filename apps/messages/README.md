@@ -21,6 +21,8 @@ is chosen if there isn't much message text, but this specifies the smallest the 
 it starts getting clipped.
 * `Show Read` - Should the widget also show when there are only old messages?
 * `Auto-Open Music` - Should the app automatically open when the phone starts playing music?
+* `Debug Log` - Enable to save a copy of every message to "messages.debug".
+                **Warning:** This file is never cleaned automatically, you need to manually erase it
 
 ## New Messages
 

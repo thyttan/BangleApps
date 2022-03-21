@@ -16,6 +16,7 @@
     {"name":"messages","url":"lib.js"}
   ],
   "data": [{"name":"messages.json"},{"name":"messages.jsonl","storageFile":true},
+           {"name":"messages.debug","storageFile":true},
            {"name":"messages.settings.json"}],
   "screenshots": [{"url":"screenshot.png"},{"url":"screenshot-notify.gif"}],
   "sortorder": -9

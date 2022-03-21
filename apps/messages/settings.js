@@ -6,6 +6,7 @@
     if (settings.unreadTimeout===undefined) settings.unreadTimeout = 60;
     settings.showRead = !!settings.showRead;
     settings.openMusic = !!settings.openMusic;
+    settings.debugLog = !!settings.debugLog;
     settings.maxUnreadTimeout = 240;
     return settings;
   }
@@ -55,6 +56,11 @@
         value: !!settings().openMusic,
         format: v => v ?/*LANG*/"Yes" :/*LANG*/"No",
         onchange: v => updateSetting("openMusic", v)
+      },
+      /*LANG*/"Debug Log": {
+        value: !!settings().debugLog,
+        format: v => v ?/*LANG*/"On" :/*LANG*/"Off",
+        onchange: v => updateSetting("debugLog", v)
       },
     };
     if (MESSAGES && MESSAGES.length) { // only when in-app

@@ -92,6 +92,8 @@ exports.save = function(events) {
  * @param {object} event
  */
 exports.pushMessage = function(event) {
+  if (exports.debug === undefined) exports.debug = !!((require("Storage").readJSON("messages.settings.json", true) || {}).debugLog);
+  if (exports.debug) require("Storage").open("messages.debug", "a").write(`${(new Date).toJSON().slice(0, -5)} ${JSON.stringify(event)}`+"\n");
   const inApp = "undefined"!== typeof MESSAGES;
   if (event.t==="add" && event.new===undefined) { // If 'new' has not been set yet, set it
     event.new = true; // Assume it should be new
