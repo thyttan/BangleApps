@@ -40,9 +40,7 @@ try {
   MESSAGES = require("messages").load();
   // Write them back to storage when we're done
   E.on("kill", () => {
-    [call, music, map, alarm].forEach(s => {
-      if (s) MESSAGES.push(s);
-    });
+    if (map) MESSAGES.push(map); // we assume other special messages are outdated once we close the app
     require("messages").save(MESSAGES);
     delete global.MESSAGES;
   });
@@ -330,7 +328,6 @@ function toggleMusic() {
 function showMusic() {
   setActive("music");
   clearStuff();
-  delete music.new;
   let trackScrollOffset = 0;
   let artistScrollOffset = 0;
   let albumScrollOffset = 0;
@@ -698,7 +695,7 @@ function showMessageActions() {
  * @param {number} [num=0] Message to show
  * @param {boolean} [bottom=false] Scroll message to bottom right away
  */
-let buzzing = false, moving = false;
+let buzzing = false, moving = false, switching = false;
 function showMessage(num, bottom) {
   clearStuff();
   if (!MESSAGES.length) {
@@ -721,7 +718,6 @@ function showMessage(num, bottom) {
     w = h<=ar.h-fh ? ar.w : ar.w-1; // leave a pixel for the scrollbar?
   let offset = 0, oldOffset = 0;
   const move = (dy) => {
-    moving = true; // prevent scrolling right into next/prev message
     offset = Math.max(0, Math.min(h-(ar.h-fh), offset+dy)); // clip at message height
     dy = oldOffset-offset; // real dy
     // move all elements to new offset
@@ -808,39 +804,49 @@ function showMessage(num, bottom) {
       },
       drag: e => {
         delete msg.new;
-        const dy = -e.dy;
-        if (dy>0) { // up
-          if (h>ar.h && offset<h-ar.h) {
-            move(dy);
-          } else if (num<MESSAGES.length-1) { // bottom reached: show next
-            if (!moving) { // don't scroll right through to next message
-              Bangle.buzz(30);
-              moving = true;
-              showMessage(num+1);
+        if (!switching) {
+          const dy = -e.dy;
+          if (dy>0) { // up
+            if (h>ar.h && offset<h-ar.h) {
+              moving = true; // prevent scrolling right into next message
+              move(dy);
+            } else if (num<MESSAGES.length-1) { // already at bottom: show next
+              if (!moving) { // don't scroll right through to next message
+                Bangle.buzz(30);
+                switching = true; // don't process any more drag events until we lift our finger
+                showMessage(num+1);
+              }
+            } else { // already at bottom of last message
+              buzzOnce();
             }
-          } else {
-            buzzOnce(); // already at bottom of last message
-          }
-        } else if (dy<0) { // down
-          if (offset>0) {
-            move(dy);
-          } else if (num>0) { // top reached: show prev
-            if (!moving) { // don't scroll right through to previous message
-              Bangle.buzz(30);
-              moving = true;
-              showMessage(num-1, true);
+          } else if (dy<0) { // down
+            if (offset>0) {
+              moving = true; // prevent scrolling right into prev message
+              move(dy);
+            } else if (num>0) { // already at top: show prev
+              if (!moving) { // don't scroll right through to previous message
+                Bangle.buzz(30);
+                switching = true; // don't process any more drag events until we lift our finger
+                showMessage(num-1, true);
+              }
+            } else { // already at top of first message
+              buzzOnce();
             }
-          } else {
-            buzzOnce(); // already at top of first message
           }
         }
-        if (!e.b) moving = false; // touch stopped: we can swipe to another message (if we reached the top/bottom)
+        if (!e.b) {
+          // touch end: we can swipe to another message (if we reached the top/bottom) or move the new message
+          moving = false;
+          switching = false;
+        }
       },
       touch: (side, xy) => {
         // setUI overrides Layout listeners, so we need to check for button presses
         delete msg.new;
-        const b = layout.button;
-        if (xy.x>=b.x && xy.x<=b.x+b.w && xy.y>b.y && xy.y<=b.y+b.w) b.cb();
+        // const b = layout.button;
+        // if (xy.x>=b.x && xy.x<=b.x+b.w && xy.y>b.y && xy.y<=b.y+b.w) b.cb();
+        // actually: just accept touches anywhere
+        if (xy.y>=ar.y) showMessageActions();
       },
     });
   } else { // Bangle.js 1
@@ -871,6 +877,8 @@ function showMessage(num, bottom) {
         } else {
           buzzOnce(); // already at top of first message
         }
+      } else {
+        showMessageActions();
       }
     });
     Bangle.swipeHandler = dir => {
@@ -885,19 +893,25 @@ function showMessage(num, bottom) {
  * Determine message layout information: height, fonts, and wrapped title/body texts
  *
  * @param msg
- * @returns {{h: number, title: (string), titleFont: (string), body: (string), bodyFont: (string)}}
+ * @returns {{h: number, src: (string), title: (string), titleFont: (string), body: (string), bodyFont: (string)}}
  */
 function getMessageLayoutInfo(msg) {
-  let h = 0;
 
-  // header:
-  h += 4; // 2x2 padding
-  let w = Bangle.appRect.w-60;  // icon(24) + padding:left(5) + padding:btn-txt(5) + internal btn padding(20) + padding:right(5) + scrollbar(1)
-  let title = msg.title || "", titleFont = fontHuge,
+  // header: [icon][title]
+  //         [ src]
+
+  let w, src = msg.src || "",
+    title = msg.title || "", titleFont = fontHuge,
+    body = msg.body || "", bodyFont = fontHuge,
     th = 0, // title height
-    ih = 0; // icon height
+    ih = 54; // icon height: // icon(24) + internal padding(20) + padding(10)
+  if (!title) {
+    title = src;
+    src = "";
+  }
   if (title) {
     th += 2; // padding
+    w = Bangle.appRect.w-60;  // icon(24) + padding:left(5) + padding:btn-txt(5) + internal btn padding(20) + padding:right(5) + scrollbar(1)
     if (g.setFont(titleFont).stringWidth(title)>w) {
       titleFont = fontBig;
       if (settings.fontSize!==1 && g.setFont(titleFont).stringWidth(title)>w) {
@@ -907,13 +921,16 @@ function getMessageLayoutInfo(msg) {
     title = g.setFont(titleFont).wrapString(title, w).join("\n");
     th += g.stringMetrics(title).height;
   }
-  ih = 51; // icon(24) + internal padding(20) + padding(7)
-  if (msg.src && title) ih += 2+g.setFont(fontSmall).stringMetrics(msg.src).height;
-  h = Math.max(ih, th); // maximum of icon/title
+  if (src) {
+    w = 59;  // icon(24) + padding:left(5) + padding:btn-txt(5) + internal btn padding(20) + padding:right(5)
+    src = g.setFont(fontSmall).wrapString(src, w).join("\n");
+    ih += g.setFont(fontSmall).stringMetrics(src).height;
+  }
+
+  let h = Math.max(ih, th); // maximum of icon/title
 
   // body:
   w = Bangle.appRect.w-5; // scrollbar+padding(2x2)
-  let body = msg.body || "", bodyFont = fontHuge;
   if (g.setFont(bodyFont).stringWidth(body)>w*2) {
     bodyFont = fontBig;
     if (settings.fontSize!==1 && g.setFont(bodyFont).stringWidth(body)>w*3) {
@@ -924,6 +941,7 @@ function getMessageLayoutInfo(msg) {
   h += 4+g.stringMetrics(body).height;
 
   return {
+    src: src,
     title: title, titleFont: titleFont,
     body: body, bodyFont: bodyFont,
     h: h,
@@ -946,11 +964,11 @@ function getMessageLayout(msg) {
                 src: getMessageImage(msg), col: getMessageImageCol(msg),
                 cb: () => showMessageActions(),
               },
-              msg.src && info.title ? {type: "txt", font: fontSmall, label: msg.src, bgCol: g.theme.bg2, col: g.theme.fg2} : {},
-              msg.src && info.title ? {height: 2} : {},
+              info.src ? {type: "txt", font: fontSmall, label: info.src, bgCol: g.theme.bg2, col: g.theme.fg2} : {},
+              {height: 3},
             ]
           },
-          info.title || msg.src ? {type: "txt", font: info.titleFont, label: info.title || msg.src, bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2} : {},
+          info.title ? {type: "txt", font: info.titleFont, label: info.title, bgCol: g.theme.bg2, col: g.theme.fg2, fillx: 1, pad: 2} : {},
           {width: 3},
         ]
       },
@@ -979,13 +997,16 @@ if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   if (call && call.new) showCall(call);
   else if (newIdx>=0) showMessage(newIdx);
   else if (map && map.new) showMap(map);
-  else if (music && music.new) showMusic(music);
+  else if (music && settings.openMusic) showMusic(music);
   else if (MESSAGES.length) { // not autoloaded, but we have messages to show
     back = "main"; // prevent "back" from loading clock
     showMessage();
   } else showMain();
+  if ((call && call.new) || newIdx>=0 || alarm) {
+    buzz(!!alarm);
+  }
 
-  if (!call && newIdx>=0) {
+  if (!(call && call.new) && newIdx>=0) {
     // autoloaded for message(s): autoclose unless we receive input
     let unreadTimeoutSecs = settings.unreadTimeout;
     if (unreadTimeoutSecs===undefined) unreadTimeoutSecs = 60;

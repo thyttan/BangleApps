@@ -72,11 +72,11 @@ exports.status = function() {
  * Append message to storage file
  * @param {object} event
  */
-function append(event) {
+exports.append = function(event) {
   if (event.t==="remove") event = {t: "remove", id: event.id}; // we only need the id
   require("Storage").open("messages.jsonl", "a")
     .write(JSON.stringify(event)+"\n");
-}
+};
 /**
  * Save messages to storage file
  * @param {object[]} events
@@ -84,7 +84,7 @@ function append(event) {
 exports.save = function(events) {
   require("Storage").erase("messages.json"); // clean up old file
   require("Storage").open("messages.jsonl", "w").erase();
-  events.reverse().forEach(append); // newest message is first in array, but last in file
+  events.reverse().forEach(exports.append); // newest message is first in array, but last in file
 };
 
 /**
@@ -119,7 +119,14 @@ exports.pushMessage = function(event) {
     // so shorten e.g. "Sample Group (3 messages): Kim" to "Sample Group (3): Kim"
     [/*LANG*/"message", /*LANG*/"messages"].forEach(t => event.title = event.title.replace(" "+t+")", ")"));
   }
-  append(event);
+  if (type!=="music") {
+    // music is special: we don't want to fill the storage for every track change
+    exports.append(event);
+    if ((event.t==="remove" || event.t==="modify") && Math.random()>=0.8) {
+      // perform housekeeping every so often
+      exports.save(exports.load());
+    }
+  }
   Bangle.emit("message", type, event);
 };
 /// Remove all messages

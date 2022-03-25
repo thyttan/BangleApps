@@ -14,19 +14,28 @@
     let settings = require("Storage").readJSON("messages.settings.json", true) || {};
     settings[setting] = value;
     require("Storage").writeJSON("messages.settings.json", settings);
+    if (setting==="vibrate") { // demonstrate now
+      function b() {
+        const c = value[0];
+        value = value.substring(1);
+        if (c===".") Bangle.buzz().then(() => setTimeout(b, 100));
+        if (c==="-") Bangle.buzz(500).then(() => setTimeout(b, 100));
+      }
+      b();
+    }
   }
 
-  const vibPatterns = [/*LANG*/"Off", ".", "-", "--", "-.-", "---"];
+  const vibPatterns = [".", "-", "--", ".-", "-.-", "---"];
   function showSettingsMenu() {
     let menu = {
       "": {"title": /*LANG*/"Messages"},
       "< Back": back,
       /*LANG*/"Vibrate": {
         value: Math.max(0, vibPatterns.indexOf(settings().vibrate)),
-        min: 0, max: vibPatterns.length,
-        format: v => vibPatterns[v] || "Off",
+        min: 0, max: vibPatterns.length, // max is out of bounds, for "Off"
+        format: v => vibPatterns[v] || /*LANG*/"Off",
         onchange: v => {
-          updateSetting("vibrate", vibPatterns[v]);
+          updateSetting("vibrate", vibPatterns[v] || "");
         }
       },
       /*LANG*/"Repeat": {

@@ -62,6 +62,7 @@ WIDGETS["messages"] = {
     const w = WIDGETS["messages"];
     switch(type) {
       case "text":
+        if (msg.t==="add" && msg.new && (Bangle.CLOCK || msg.important)) return; // no need: boot will be loading the app anyway
         if (msg.t==="remove") w.status = require("messages").status();
         else if (msg.new || w.status==="new") w.status = "new";
         else if (w.status==="none") w.status = "old";
