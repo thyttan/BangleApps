@@ -4,9 +4,11 @@
     if (settings.vibrate===undefined) settings.vibrate = ".";
     if (settings.repeat===undefined) settings.repeat = 4;
     if (settings.unreadTimeout===undefined) settings.unreadTimeout = 60;
+    if (settings.onTap===undefined) settings.onTap = 0;
     settings.showRead = !!settings.showRead;
     settings.openMusic = !!settings.openMusic;
     settings.debugLog = !!settings.debugLog;
+    settings.button = !!settings.button;
     settings.maxUnreadTimeout = 240;
     return settings;
   }
@@ -15,17 +17,21 @@
     settings[setting] = value;
     require("Storage").writeJSON("messages.settings.json", settings);
     if (setting==="vibrate") { // demonstrate now
+      if (global.WIDGETS && WIDGETS["messages"] && WIDGETS["messages"].b) return;
+      if (global.WIDGETS && WIDGETS["messages"]) WIDGETS["messages"].b = true;
       function b() {
         const c = value[0];
         value = value.substring(1);
         if (c===".") Bangle.buzz().then(() => setTimeout(b, 100));
-        if (c==="-") Bangle.buzz(500).then(() => setTimeout(b, 100));
+        else if (c==="-") Bangle.buzz(500).then(() => setTimeout(b, 100));
+        else if (global.WIDGETS && WIDGETS["messages"]) delete WIDGETS["messages"].b;
       }
       b();
     }
   }
 
   const vibPatterns = [".", "-", "--", ".-", "-.-", "---"];
+  const tapOptions = [/*LANG*/"Message Menu",/*LANG*/"Dismiss",/*LANG*/"Back"];
   function showSettingsMenu() {
     let menu = {
       "": {"title": /*LANG*/"Messages"},
@@ -55,6 +61,19 @@
         min: 0, max: 1,
         format: v => [/*LANG*/"Small",/*LANG*/"Medium"][v],
         onchange: v => updateSetting("fontSize", v)
+      },
+      /*LANG*/"On Tap": {
+        value: settings().onTap,
+        min: 0, max: tapOptions.length-1,
+        format: v => tapOptions[v],
+        onchange: v => {
+          updateSetting("onTap", v);
+        }
+      },
+      /*LANG*/"Dismiss button": {
+        value: !!settings().button,
+        format: v => v ?/*LANG*/"Yes" :/*LANG*/"No",
+        onchange: v => updateSetting("button", v)
       },
       /*LANG*/"Show Read": {
         value: !!settings().showRead,

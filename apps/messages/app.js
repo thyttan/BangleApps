@@ -169,10 +169,10 @@ function getIcon(icon) {
       return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
     case "back":
       return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
+    case "menu":
+      return atob("GBiBAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAA==");
     case "unread":
       return atob("HRiBAAAAH4AAAf4AAB/4AAHz4AAfn4AA/Pz/5+fj/z8/j/n5/j/P//j/Pn3j+PPPx+P8fx+Pw/x+AF/B4A78RiP3xwOPvHw+Pcf/+Ox//+NH//+If//+B///+A==");
-    case "unknown":
-      return atob("Hh6BAAAAAAAAAAAAAAAAAAPwAAA/8AAB/+AAD//AAD4fAAHwPgAHwPgAAAPgAAAfAAAA/AAAD+AAAH8AAAHwAAAPgAAAPgAAAPgAAAAAAAAAAAAAAAAAAHAAAAPgAAAPgAAAPgAAAHAAAAAAAAAAAAAAAAAA");
     case "trash":
       return atob("GBiBAAAAAAAAAAB+AA//8A//8AYAYAYAYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAYAYAYAYAf/4AP/wAAAAAAAAA==");
     case "gmail":
@@ -216,6 +216,9 @@ function getIcon(icon) {
       return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
     case "wordfeud":
       return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
+    case "unknown":
+    default:
+      return atob("Hh6BAAAAAAAAAAAAAAAAAAPwAAA/8AAB/+AAD//AAD4fAAHwPgAHwPgAAAPgAAAfAAAA/AAAD+AAAH8AAAHwAAAPgAAAPgAAAPgAAAAAAAAAAAAAAAAAAHAAAAPgAAAPgAAAPgAAAHAAAAAAAAAAAAAAAAAA");
   }
 }
 /*
@@ -445,6 +448,19 @@ function showMain() {
     const allLabel = MESSAGES.length+" "+(MESSAGES.length===1 ?/*LANG*/"Message" :/*LANG*/"Messages");
     if (MESSAGES.length) grid[allLabel] = {icon: "Notification", col: "#0ff", cb: () => showMessage()};
     else grid[/*LANG*/"No Messages"] = {icon: "Neg", col: "#fff", cb: () => load()};
+  }
+  if (unread<MESSAGES.length) {
+    grid[/*LANG*/"Dismiss Read"] = {
+      icon: "Trash", col: "#f00", cb: () => {
+        E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Dismiss Read Messages"}).then(isYes => {
+          if (isYes) {
+            MESSAGES.filter(m => !m.new).forEach(m => Bangle.messageResponse(m, false));
+            MESSAGES = MESSAGES.filter(m => m.new);
+          }
+          showMain();
+        });
+      }
+    };
   }
   if (map) grid[/*LANG*/"Map"] = {icon: "Map", col: "#f0f", cb: () => showMap()};
   if (music) grid[/*LANG*/"Music"] = {icon: "Music", col: "#f00", cb: () => showMusic()};
@@ -807,7 +823,7 @@ function showMessage(num, bottom) {
         if (!switching) {
           const dy = -e.dy;
           if (dy>0) { // up
-            if (h>ar.h && offset<h-ar.h) {
+            if (h>ar.h-fh && offset<h-(ar.h-fh)) {
               moving = true; // prevent scrolling right into next message
               move(dy);
             } else if (num<MESSAGES.length-1) { // already at bottom: show next
@@ -841,12 +857,25 @@ function showMessage(num, bottom) {
         }
       },
       touch: (side, xy) => {
-        // setUI overrides Layout listeners, so we need to check for button presses
         delete msg.new;
-        // const b = layout.button;
-        // if (xy.x>=b.x && xy.x<=b.x+b.w && xy.y>b.y && xy.y<=b.y+b.w) b.cb();
-        // actually: just accept touches anywhere
-        if (xy.y>=ar.y) showMessageActions();
+        let handled = false;
+        // setUI overrides Layout listeners, so we need to check for button presses ourselves
+        if (layout.button) {
+          const b = layout.button;
+          if (xy.x>=b.x && xy.y>=b.y && xy.x<=b.x+b.w && xy.y<=b.y+b.h) return b.cb();
+        }
+        // touch anywhere else:
+        if (!handled && xy.y>=ar.y) {
+          switch(settings.onTap) {
+            case 1:
+              return respondToMessage(false);
+            case 2:
+              return goBack();
+            case 0:
+            default:
+              return showMessageActions();
+          }
+        }
       },
     });
   } else { // Bangle.js 1
@@ -887,6 +916,22 @@ function showMessage(num, bottom) {
       else if (dir=== -1) showMessageActions();
     };
     Bangle.on("swipe", Bangle.swipeHandler);
+    Bangle.touchHandler = side => {
+      delete msg.new;
+      // treat whole right-side as button
+      if (layout.button && side===2) return layout.button.cb();
+      // no button to touch:
+      switch(settings.onTap) {
+        case 1:
+          return respondToMessage(false);
+        case 2:
+          return goBack();
+        case 0:
+        default:
+          return showMessageActions();
+      }
+    };
+    Bangle.on("touch", Bangle.touchHandler);
   }
 }
 /**
@@ -940,6 +985,8 @@ function getMessageLayoutInfo(msg) {
   body = g.setFont(bodyFont).wrapString(msg.body, w).join("\n");
   h += 4+g.stringMetrics(body).height;
 
+  if (settings.button) h += 44; // icon(24) + padding(2x2) + internal btn padding(16)
+
   return {
     src: src,
     title: title, titleFont: titleFont,
@@ -959,11 +1006,7 @@ function getMessageLayout(msg) {
           {
             type: "v", c: [
               {height: 3},
-              {
-                id: "button", type: B2 ? "btn" : "img", pad: 2,
-                src: getMessageImage(msg), col: getMessageImageCol(msg),
-                cb: () => showMessageActions(),
-              },
+              {type: "img", pad: 2, src: getMessageImage(msg), col: getMessageImageCol(msg)},
               info.src ? {type: "txt", font: fontSmall, label: info.src, bgCol: g.theme.bg2, col: g.theme.fg2} : {},
               {height: 3},
             ]
@@ -973,6 +1016,12 @@ function getMessageLayout(msg) {
         ]
       },
       {type: "txt", font: info.bodyFont, label: info.body, fillx: 1, filly: 1, pad: 2},
+      settings.button ? {
+        type: "h", c: [
+          B2 ? {} : {fillx: 1}, // Bangle.js 1: touching right side = press button
+          {id: "button", type: "btn", pad: 2, src: getIcon("trash"), cb: () => respondToMessage(false)},
+        ]
+      } : {},
     ]
   });
   return layout;
