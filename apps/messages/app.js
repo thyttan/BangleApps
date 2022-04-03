@@ -137,8 +137,9 @@ function onMessageRemoved() {
   if (active==="messages") {
     if (MESSAGES.length===0) { // removed last message
       if (unreadTimeout) load();
-      else showMain();
+      else return showMain();
     }
+    showMessage(messageNum);
   }
 }
 function onMessageModified(idx) {
@@ -727,11 +728,8 @@ function showMessage(num, bottom) {
   if (num>=MESSAGES.length) num = MESSAGES.length-1;
   setActive("messages", num);
   // only clear msg.new on user input
-  const ar = Bangle.appRect,
-    msg = MESSAGES[num], // message
-    fh = 10, // footer height
-    h = Math.max(getMessageLayoutInfo(msg).h, ar.h-fh), // message height: at least full screen
-    w = h<=ar.h-fh ? ar.w : ar.w-1; // leave a pixel for the scrollbar?
+  const msg = MESSAGES[num], // message
+    fh = 10; // footer height
   let offset = 0, oldOffset = 0;
   const move = (dy) => {
     offset = Math.max(0, Math.min(h-(ar.h-fh), offset+dy)); // clip at message height
@@ -798,15 +796,11 @@ function showMessage(num, bottom) {
       );
   }
 
-  // lie to Layout library about available space
-  Bangle.appRect = Object.assign({}, ar, {w: w, h: h, x2: ar.x+w-1, y2: ar.y+h-1});
   layout = getMessageLayout(msg);
-  layout.update();
-  delete Bangle.appRect;
+  const h = layout.l.h; // message height
   if (bottom) move(h); // scrolling backwards: jump to bottom of message
   else draw();
   if (B2) {
-    dy = 0;
     Bangle.setUI({
       mode: "custom",
       back: () => {
@@ -935,7 +929,7 @@ function showMessage(num, bottom) {
   }
 }
 /**
- * Determine message layout information: height, fonts, and wrapped title/body texts
+ * Determine message layout information: size, fonts, and wrapped title/body texts
  *
  * @param msg
  * @returns {{h: number, src: (string), title: (string), titleFont: (string), body: (string), bodyFont: (string)}}
@@ -944,7 +938,8 @@ function getMessageLayoutInfo(msg) {
 
   // header: [icon][title]
   //         [ src]
-
+  //
+  // But: no title? -> use src as title
   let w, src = msg.src || "",
     title = msg.title || "", titleFont = fontHuge,
     body = msg.body || "", bodyFont = fontHuge,
@@ -987,17 +982,23 @@ function getMessageLayoutInfo(msg) {
 
   if (settings.button) h += 44; // icon(24) + padding(2x2) + internal btn padding(16)
 
+  w = Bangle.appRect.w;
+  if (h > Bangle.appRect.h) w--; // 1px scrollbar
+
   return {
     src: src,
     title: title, titleFont: titleFont,
     body: body, bodyFont: bodyFont,
     h: h,
+    w: w,
   };
 }
 
 function getMessageLayout(msg) {
   const info = getMessageLayoutInfo(msg);
 
+  // lie to Layout library about available space
+  Bangle.appRect = Object.assign({}, ar, {w: info.w, h: info.h, x2: ar.x+info.w-1, y2: ar.y+info.h-1});
   layout = new Layout({
     type: "v", c: [
       {
@@ -1024,14 +1025,17 @@ function getMessageLayout(msg) {
       } : {},
     ]
   });
+  layout.update();
+  delete Bangle.appRect;
   return layout;
 }
 
-let call, music, map, alarm, messageNum;
+let ar, call, music, map, alarm, messageNum;
 if (MESSAGES!==undefined) { // only if loading MESSAGES worked
   g.clear();
   Bangle.loadWidgets();
   Bangle.drawWidgets();
+  ar = Bangle.appRect;
   // find special messages, and remove them from MESSAGES
   let idx = MESSAGES.findIndex(m => m.id==="call");
   if (idx>=0) call = MESSAGES.splice(idx, 1)[0];
