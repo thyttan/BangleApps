@@ -92,13 +92,23 @@ function onCall(msg) {
     showCall();
   }
 }
+let musicTimeout;
 function onMusic(msg) {
   const hadMusic = !!music;
   // music is never removed: only added/updated
-  music = Object.assign(music || {}, msg);
+  music = Object.assign({}, music, msg);
+
+  // auto-close after being paused (because "stop" messages don't seem to exist)
+  if (musicTimeout) clearTimeout(musicTimeout);
+  musicTimeout = undefined;
+  if (music.state!=="play") musicTimeout = setTimeout(function() {
+    musicTimeout = undefined;
+    if (active==="music" && music.state!=="play") goBack();
+  }, Math.max(music.dur, 60)*1000); // wait song duration, or at least one minute
+
   if (active==="music") showMusic(); // update music screen
   else if (active==="main" && !hadMusic) {
-    if (settings.openMusic) showMusic();
+    if (settings.openMusic && music.state==="play" && music.track) showMusic();
     else showMain(); // refresh menu: add "Music" entry
   }
 }
@@ -166,6 +176,8 @@ function getIcon(icon) {
       return atob("GRmBAAAAAAAAAAAAAAIAYAHx/wH//+D/+fhz75w/P/4f//8P//uH///D///h3f/w4P+4eO/8PHZ+HJ/nDu//g///wH+HwAYAIAAAAAAAAAAAAAA=");
     case "music":
       return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
+    case "pause":
+      return atob("GBiBAAAAAAAAAAAAAAOBwAfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AOBwAAAAAAAAAAAAA==");
     case "settings":
       return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
     case "back":
@@ -365,11 +377,12 @@ function showMusic() {
   }
   updateLabels();
 
+  const icon = (music.state==="play") ? "music" : "pause";
   layout = new Layout({
     type: "v", c: [
       {
         type: "h", fillx: 1, bgCol: g.theme.bg2, col: g.theme.fg2, c: [
-          {type: "img", pad: 10, bgCol: g.theme.bg2, col: g.theme.fg2, src: getIcon("music")},
+          {type: "img", id: "music", pad: 10, bgCol: g.theme.bg2, col: g.theme.fg2, src: getIcon(icon)},
           {
             type: "v", fillx: 1, c: [
               {type: "txt", font: fontMedium, col: g.theme.fg2, bgCol: g.theme.bg2, label: artistName, pad: 2, id: "artist"},
@@ -389,7 +402,12 @@ function showMusic() {
   }, ud => {
     if (!Bangle.musicControl) return;
     if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
-    else toggleMusic();
+    else {
+      toggleMusic();
+      const icon = (music.state==="play") ? "music" : "pause";
+      layout.music.src = getIcon(icon);
+      layout.render(layout.music);
+    }
   });
   Bangle.swipeHandler = dir => {
     if (dir===1) goBack();
@@ -983,7 +1001,7 @@ function getMessageLayoutInfo(msg) {
   if (settings.button) h += 44; // icon(24) + padding(2x2) + internal btn padding(16)
 
   w = Bangle.appRect.w;
-  if (h > Bangle.appRect.h) w--; // 1px scrollbar
+  if (h>Bangle.appRect.h) w--; // 1px scrollbar
 
   return {
     src: src,
