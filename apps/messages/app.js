@@ -274,7 +274,7 @@ function getMessageImage(msg) {
   if (msg.id==="back") return getIcon("Back");
   const s = (msg.src || "").toLowerCase();
 
-  return getIcon(s) || getIcon("notification");
+  return getIcon(s, "notification");
 }
 function getMessageImageCol(msg, def) {
   return {
