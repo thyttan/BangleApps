@@ -44,16 +44,7 @@ WIDGETS["messages"] = {
   }, buzz: function() {
     if (WIDGETS["messages"].b) return;
     if ((require("Storage").readJSON("setting.json", 1) || {}).quiet) return; // never buzz during Quiet Mode
-    let v = (require("Storage").readJSON("messages.settings.json", true) || {}).vibrate || ".";
-    WIDGETS["messages"].b = true;
-    function b() {
-      const c = v[0];
-      v = v.substring(1);
-      if (c===".") Bangle.buzz().then(() => setTimeout(b, 100));
-      else if (c==="-") Bangle.buzz(500).then(() => setTimeout(b, 100));
-      else delete WIDGETS["messages"].b;
-    }
-    b();
+    require("buzz").pattern((require('Storage').readJSON("messages.settings.json", true) || {}).vibrate || ".");
   }, touch: function(b, c) {
     const w = WIDGETS["messages"];
     if (!w || !w.width || c.x<w.x || c.x>w.x+w.width || c.y<w.y || c.y>w.y+w.iconwidth) return;
