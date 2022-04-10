@@ -19,7 +19,7 @@ to the clock where a ringing bell will be shown in the Widget bar.
 * `Min Font` - The minimum font size used when displaying messages on the screen. A bigger font
 is chosen if there isn't much message text, but this specifies the smallest the font should get before
 it starts getting clipped.
-* `On Tap` - Action to take when tapping a message:
+* `On Tap` - Action to take when tapping a message (after reaching the bottom):
   - `Message Menu`: Open menu with message actions
   - `Dismiss`: Dismiss message right away
   - `Back`: Go back to clock/main menu

@@ -860,7 +860,9 @@ function showMessage(num, bottom) {
   const h = layout.l.h; // message height
   if (bottom) move(h); // scrolling backwards: jump to bottom of message
   else draw();
-  if (B2) {
+  const PAGE_SIZE = Bangle.appRect.h-fh;
+  // TODO: deduplicate B1/B2 UI code
+  if (B2) { // Bangle.js 2
     Bangle.setUI({
       mode: "custom",
       back: () => {
@@ -912,20 +914,20 @@ function showMessage(num, bottom) {
       },
       touch: (side, xy) => {
         delete msg.new;
-        let handled = false;
         // setUI overrides Layout listeners, so we need to check for button presses ourselves
         if (layout.button) {
           const b = layout.button;
           if (xy.x>=b.x && xy.y>=b.y && xy.x<=b.x+b.w && xy.y<=b.y+b.h) return b.cb();
         }
         // touch anywhere else:
-        if (!handled && xy.y>=ar.y) {
+        if (xy.y>=ar.y) {
+          if (h>ar.h-fh && offset<h-(ar.h-fh)) return move(+PAGE_SIZE); // first: pagedown until we reach the bottom
           switch(settings.onTap) {
-            case 1:
+            case 1: // Dismiss
               return respondToMessage(false);
-            case 2:
+            case 2: // Back
               return goBack();
-            case 0:
+            case 0: // Message Menu
             default:
               return showMessageActions();
           }
@@ -941,10 +943,9 @@ function showMessage(num, bottom) {
       },
     }, dir => {
       delete msg.new;
-      const STEP = 50;
       if (dir=== -1) { // up
-        if (h>ar.h && offset<h-ar.h) {
-          move(+STEP);
+        if (h>ar.h-fh && offset<h-(ar.h-fh)) {
+          move(+PAGE_SIZE);
         } else if (num<MESSAGES.length-1) { // bottom reached: show next
           Bangle.buzz(30);
           showMessage(num+1);
@@ -953,14 +954,14 @@ function showMessage(num, bottom) {
         }
       } else if (dir===1) { // down
         if (offset>0) {
-          move(-STEP);
+          move(-PAGE_SIZE);
         } else if (num>0) { // top reached: show previous
           Bangle.buzz(30);
-          showMessage(num-1);
+          showMessage(num-1, true);
         } else {
           buzzOnce(); // already at top of first message
         }
-      } else {
+      } else { // button
         showMessageActions();
       }
     });
@@ -972,6 +973,7 @@ function showMessage(num, bottom) {
     Bangle.on("swipe", Bangle.swipeHandler);
     Bangle.touchHandler = side => {
       delete msg.new;
+      if (h>ar.h-fh && offset<h-(ar.h-fh)) return move(+PAGE_SIZE); // first: pagedown until we reach the bottom
       // treat whole right-side as button
       if (layout.button && side===2) return layout.button.cb();
       // no button to touch:
@@ -986,7 +988,7 @@ function showMessage(num, bottom) {
       }
     };
     Bangle.on("touch", Bangle.touchHandler);
-  }
+  } // Bangle.js 1/2
 }
 /**
  * Determine message layout information: size, fonts, and wrapped title/body texts
