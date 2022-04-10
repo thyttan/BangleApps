@@ -452,10 +452,10 @@ function showMusic() {
     }
   });
   Bangle.swipeHandler = dir => {
-    if (dir===1) goBack();
-    if (dir=== -1 && Bangle.musicControl) {
+    if (!Bangle.musicControl) return;
+    if (dir!==0) {
       Bangle.buzz(20);
-      Bangle.musicControl("next");
+      Bangle.musicControl(dir===1 ? "prev" : "next");
     }
   };
   Bangle.on("swipe", Bangle.swipeHandler);
