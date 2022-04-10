@@ -161,77 +161,108 @@ function onMessageModified(idx) {
   if (msg.new || active!=="messages" || messageNum===idx) showMessage(idx);
 }
 
-function getIcon(icon) {
+function getIcon(icon, def) {
   // TODO: icons should be 24x24px with 1bpp colors and transparency
   switch(icon.toLowerCase()) {
-    case "ok":
-      return atob("FhmBAAHAAAeAAB4AAPgAA+AAH4AAfgAD8AAPwAD//+//////////////7//////////////v//+///7///v//8///gf/+A//wA==");
-    case "nak":
-      return atob("FhmBAA//wH//j//+P//8///7///v//+///7//////////////v//////////z//+D8AAPwAAfgAB+AAD4AAPgAAeAAB4AAHAAA==");
-    case "phone":
-      return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
-    case "nophone":
-      return atob("Hh6BAAAAAAGAAAAHAAAADgAAABwADwA4Af8AcA/8AOB/+AHH/+ADv/8AB//wAA/HAAAeAAACOAAADHAAAHjgAAPhwAAfg4AAfgcAAfwOAA/wHAA/wDgA/gBwA/gA4AfAAcAfAAOAGAAHAAAADgAAABgAAAAA");
-    case "map":
-      return atob("GRmBAAAAAAAAAAAAAAIAYAHx/wH//+D/+fhz75w/P/4f//8P//uH///D///h3f/w4P+4eO/8PHZ+HJ/nDu//g///wH+HwAYAIAAAAAAAAAAAAAA=");
-    case "music":
-      return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
-    case "pause":
-      return atob("GBiBAAAAAAAAAAAAAAOBwAfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AOBwAAAAAAAAAAAAA==");
-    case "settings":
-      return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
+    // generic icons:
+    case "alarm":
+    case "alarmclockreceiver":
+      return atob("GBjBAP////8AAAAAAAACAEAHAOAefng5/5wTgcgHAOAOGHAMGDAYGBgYGBgYGBgYGBgYDhgYBxgMATAOAHAHAOADgcAB/4AAfgAAAAAAAAA=");
     case "back":
       return atob("FhYBAAAAEAAAwAAHAAA//wH//wf//g///BwB+DAB4EAHwAAPAAA8AADwAAPAAB4AAHgAB+AH/wA/+AD/wAH8AA==");
-    case "menu":
-      return atob("GBiBAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAA==");
-    case "unread":
-      return atob("HRiBAAAAH4AAAf4AAB/4AAHz4AAfn4AA/Pz/5+fj/z8/j/n5/j/P//j/Pn3j+PPPx+P8fx+Pw/x+AF/B4A78RiP3xwOPvHw+Pcf/+Ox//+NH//+If//+B///+A==");
-    case "trash":
-      return atob("GBiBAAAAAAAAAAB+AA//8A//8AYAYAYAYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAYAYAYAYAf/4AP/wAAAAAAAAA==");
-    case "gmail":
+    case "calendar":
+      return atob("GBiBAAAAAAAAAAAAAA//8B//+BgAGBgAGBgAGB//+B//+B//+B9m2B//+B//+Btm2B//+B//+Btm+B//+B//+A//8AAAAAAAAAAAAA==");
     case "mail":
-    case "outlook mail":
     case "sms message":
     case "notification":
       return atob("HBKBAD///8H///iP//8cf//j4//8f5//j/x/8//j/H//H4//4PB//EYj/44HH/Hw+P4//8fH//44///xH///g////A==");
-    case "pos":
-      return atob("GRSBAAAAAYAAAcAAAeAAAfAAAfAAAfAAAfAAAfAAAfBgAfA4AfAeAfAPgfAD4fAA+fAAP/AAD/AAA/AAAPAAADAAAA==");
+    case "map":
+      return atob("GRmBAAAAAAAAAAAAAAIAYAHx/wH//+D/+fhz75w/P/4f//8P//uH///D///h3f/w4P+4eO/8PHZ+HJ/nDu//g///wH+HwAYAIAAAAAAAAAAAAAA=");
+    case "menu":
+      return atob("GBiBAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAAAAAP///////wAAAAAAAAAAAAAAAA==");
+    case "music":
+      return atob("FhaBAH//+/////////////h/+AH/4Af/gB/+H3/7/f/v9/+/3/7+f/vB/w8H+Dwf4PD/x/////////////3//+A=");
+    case "nak":
+      return atob("FhmBAA//wH//j//+P//8///7///v//+///7//////////////v//////////z//+D8AAPwAAfgAB+AAD4AAPgAAeAAB4AAHAAA==");
     case "neg":
       return atob("FhaBADAAMeAB78AP/4B/fwP4/h/B/P4D//AH/4AP/AAf4AB/gAP/AB/+AP/8B/P4P4fx/A/v4B//AD94AHjAAMA=");
+    case "nophone":
+      return atob("Hh6BAAAAAAGAAAAHAAAADgAAABwADwA4Af8AcA/8AOB/+AHH/+ADv/8AB//wAA/HAAAeAAACOAAADHAAAHjgAAPhwAAfg4AAfgcAAfwOAA/wHAA/wDgA/gBwA/gA4AfAAcAfAAOAGAAHAAAADgAAABgAAAAA");
+    case "ok":
+      return atob("FhmBAAHAAAeAAB4AAPgAA+AAH4AAfgAD8AAPwAD//+//////////////7//////////////v//+///7///v//8///gf/+A//wA==");
+    case "pause":
+      return atob("GBiBAAAAAAAAAAAAAAOBwAfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AfD4AOBwAAAAAAAAAAAAA==");
+    case "phone":
+      return atob("FxeBABgAAPgAAfAAB/AAD+AAH+AAP8AAP4AAfgAA/AAA+AAA+AAA+AAB+AAB+AAB+OAB//AB//gB//gA//AA/8AAf4AAPAA=");
+    case "pos":
+      return atob("GRSBAAAAAYAAAcAAAeAAAfAAAfAAAfAAAfAAAfAAAfBgAfA4AfAeAfAPgfAD4fAA+fAAP/AAD/AAA/AAAPAAADAAAA==");
+    case "settings":
+      return atob("FBSBAAAAAA8AAPABzzgf/4H/+A//APnwfw/n4H5+B+fw/g+fAP/wH/+B//gc84APAADwAAAA");
+    case "to do":
+      return atob("GBgBAAAAAAAAAAAwAAB4AAD8AAH+AAP/DAf/Hg//Px/+f7/8///4///wf//gP//AH/+AD/8AB/4AA/wAAfgAAPAAAGAAAAAAAAAA");
+    case "trash":
+      return atob("GBiBAAAAAAAAAAB+AA//8A//8AYAYAYAYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAZmYAYAYAYAYAf/4AP/wAAAAAAAAA==");
+    case "unknown":
+      return atob("Hh6BAAAAAAAAAAAAAAAAAAPwAAA/8AAB/+AAD//AAD4fAAHwPgAHwPgAAAPgAAAfAAAA/AAAD+AAAH8AAAHwAAAPgAAAPgAAAPgAAAAAAAAAAAAAAAAAAHAAAAPgAAAPgAAAPgAAAHAAAAAAAAAAAAAAAAAA");
+    case "unread":
+      return atob("HRiBAAAAH4AAAf4AAB/4AAHz4AAfn4AA/Pz/5+fj/z8/j/n5/j/P//j/Pn3j+PPPx+P8fx+Pw/x+AF/B4A78RiP3xwOPvHw+Pcf/+Ox//+NH//+If//+B///+A==");
+    // application icons
+    case "bibel":
+      return atob("GBgBAAAAA//wD//4D//4H//4H/f4H/f4H+P4H4D4H4D4H/f4H/f4H/f4H/f4H/f4H//4H//4H//4GAAAEAAAEAAACAAAB//4AAAA");
+    case "corona-warn":
+      return atob("GBgBAAAAABwAAP+AAf/gA//wB/PwD/PgDzvAHzuAP8EAP8AAPAAAPMAAP8AAH8AAHzsADzuAB/PAB/PgA//wAP/gAH+AAAwAAAAA");
+    case "discord":
+      return atob("GBgBAAAAAAAAAAAAAIEABwDgDP8wH//4H//4P//8P//8P//8Pjx8fhh+fzz+f//+f//+e//ePH48HwD4AgBAAAAAAAAAAAAAAAAA");
     case "fb":
     case "facebook":
     case "messenger":
       return atob("GBiBAAAAAAAAAAAYAAD/AAP/wAf/4A/48A/g8B/g+B/j+B/n+D/n/D8A/B8A+B+B+B/n+A/n8A/n8Afn4APnwADnAAAAAAAAAAAAAA==");
-    case "alarm":
-    case "alarmclockreceiver":
-      return atob("GBjBAP////8AAAAAAAACAEAHAOAefng5/5wTgcgHAOAOGHAMGDAYGBgYGBgYGBgYGBgYDhgYBxgMATAOAHAHAOADgcAB/4AAfgAAAAAAAAA=");
-    case "calendar":
-      return atob("GBiBAAAAAAAAAAAAAA//8B//+BgAGBgAGBgAGB//+B//+B//+B9m2B//+B//+Btm2B//+B//+Btm+B//+B//+A//8AAAAAAAAAAAAA==");
+    case "gmail":
+      return getIcon("mail");
+    case "google home":
+      return atob("GBiCAAAAAAAAAAAAAAAAAAAAAoAAAAAACqAAAAAAKqwAAAAAqroAAAACquqAAAAKq+qgAAAqr/qoAACqv/6qAAKq//+qgA6r///qsAqr///6sAqv///6sAqv///6sAqv///6sA6v///6sA6v///qsA6qqqqqsA6qqqqqsA6qqqqqsAP7///vwAAAAAAAAAAAAAAAAA==");
     case "hangouts":
       return atob("FBaBAAH4AH/gD/8B//g//8P//H5n58Y+fGPnxj5+d+fmfj//4//8H//B//gH/4A/8AA+AAHAABgAAAA=");
     case "home assistant":
       return atob("FhaBAAAAAADAAAeAAD8AAf4AD/3AfP8D7fwft/D/P8ec572zbzbNsOEhw+AfD8D8P4fw/z/D/P8P8/w/z/AAAAA=");
     case "instagram":
       return atob("GBiBAAAAAAAAAAAAAAAAAAP/wAYAYAwAMAgAkAh+EAjDEAiBEAiBEAiBEAiBEAjDEAh+EAgAEAwAMAYAYAP/wAAAAAAAAAAAAAAAAA==");
-    case "google home":
-      return atob("GBiCAAAAAAAAAAAAAAAAAAAAAoAAAAAACqAAAAAAKqwAAAAAqroAAAACquqAAAAKq+qgAAAqr/qoAACqv/6qAAKq//+qgA6r///qsAqr///6sAqv///6sAqv///6sAqv///6sA6v///6sA6v///qsA6qqqqqsA6qqqqqsA6qqqqqsAP7///vwAAAAAAAAAAAAAAAAA==");
+    case "kalender":
+      return atob("GBgBBgBgBQCgff++RQCiRgBiQAACf//+QAACQAACR//iRJkiRIEiR//iRNsiRIEiRJkiR//iRIEiRIEiR//iQAACQAACf//+AAAA");
+    case "lieferando":
+      return atob("GBgBABgAAH5wAP9wAf/4A//4B//4D//4H//4P/88fV8+fV4//V4//Vw/HVw4HVw4HBg4HBg4HBg4HDg4Hjw4Hj84Hj44Hj44Hj44");
+    case "nina":
+      return atob("GBgBAAAABAAQCAAICAAIEAAEEgAkJAgSJBwSKRxKSj4pUn8lVP+VVP+VUgAlSgApKQBKJAASJAASEgAkEAAECAAICAAIBAAQAAAA");
+    case "outlook mail":
+      return atob("HBwBAAAAAAAAAAAIAAAfwAAP/gAB/+AAP/5/A//v/D/+/8P/7/g+Pv8Dye/gPd74w5znHDnOB8Oc4Pw8nv/Dwe/8Pj7/w//v/D/+/8P/7/gf/gAA/+AAAfwAAACAAAAAAAAAAAA=");
+    case "post & dhl":
+      return atob("GBgBAPgAE/5wMwZ8NgN8NgP4NgP4HgP4HgPwDwfgD//AB/+AAf8AAAAABs7AHcdgG4MwAAAAGESAFESAEkSAEnyAEkSAFESAGETw");
+    case "signal":
+      return atob("GBgBAAAAAGwAAQGAAhggCP8QE//AB//oJ//kL//wD//0D//wT//wD//wL//0J//kB//oA//ICf8ABfxgBYBAADoABMAABAAAAAAA");
     case "skype":
       return atob("GhoBB8AAB//AA//+Af//wH//+D///w/8D+P8Afz/DD8/j4/H4fP5/A/+f4B/n/gP5//B+fj8fj4/H8+DB/PwA/x/A/8P///B///gP//4B//8AD/+AAA+AA==");
     case "slack":
       return atob("GBiBAAAAAAAAAABAAAHvAAHvAADvAAAPAB/PMB/veD/veB/mcAAAABzH8B3v+B3v+B3n8AHgAAHuAAHvAAHvAADGAAAAAAAAAAAAAA==");
-    case "threema":
-      return atob("GBjB/4Yx//8AAAAAAAAAAAAAfgAB/4AD/8AH/+AH/+AP//AP2/APw/APw/AHw+AH/+AH/8AH/4AH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-    case "twitter":
-      return atob("GhYBAABgAAB+JgA/8cAf/ngH/5+B/8P8f+D///h///4f//+D///g///wD//8B//+AP//gD//wAP/8AB/+AB/+AH//AAf/AAAYAAA");
+    case "snapchat":
+      return atob("GBgBAAAAAAAAAH4AAf+AAf+AA//AA//AA//AA//AA//AH//4D//wB//gA//AB//gD//wH//4f//+P//8D//wAf+AAH4AAAAAAAAA");
+    case "teams":
+      return atob("GBgBAAAAAAAAAAQAAB4AAD8IAA8cP/M+f/scf/gIeDgAfvvefvvffvvffvvffvvff/vff/veP/PeAA/cAH/AAD+AAD8AAAQAAAAA");
     case "telegram":
       return atob("GBiBAAAAAAAAAAAAAAAAAwAAHwAA/wAD/wAf3gD/Pgf+fh/4/v/z/P/H/D8P/Acf/AM//AF/+AF/+AH/+ADz+ADh+ADAcAAAMAAAAA==");
+    case "threema":
+      return atob("GBjB/4Yx//8AAAAAAAAAAAAAfgAB/4AD/8AH/+AH/+AP//AP2/APw/APw/AHw+AH/+AH/8AH/4AH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+    case "twitch":
+      return atob("GBgBH//+P//+P//+eAAGeAAGeAAGeDGGeDOGeDOGeDOGeDOGeDOGeDOGeAAOeAAOeAAcf4/4f5/wf7/gf//Af/+AA/AAA+AAAcAA");
+    case "twitter":
+      return atob("GhYBAABgAAB+JgA/8cAf/ngH/5+B/8P8f+D///h///4f//+D///g///wD//8B//+AP//gD//wAP/8AB/+AB/+AH//AAf/AAAYAAA");
     case "whatsapp":
       return atob("GBiBAAB+AAP/wAf/4A//8B//+D///H9//n5//nw//vw///x///5///4///8e//+EP3/APn/wPn/+/j///H//+H//8H//4H//wMB+AA==");
     case "wordfeud":
       return atob("GBgCWqqqqqqlf//////9v//////+v/////++v/////++v8///Lu+v8///L++v8///P/+v8v//P/+v9v//P/+v+fx/P/+v+Pk+P/+v/PN+f/+v/POuv/+v/Ofdv/+v/NvM//+v/I/Y//+v/k/k//+v/i/w//+v/7/6//+v//////+v//////+f//////9Wqqqqqql");
-    case "unknown":
+    case "youtube":
+      return atob("GBgBAAAAAAAAAAAAAAAAAf8AH//4P//4P//8P//8P5/8P4/8f4P8f4P8P4/8P5/8P//8P//8P//4H//4Af8AAAAAAAAAAAAAAAAA");
     default:
-      return atob("Hh6BAAAAAAAAAAAAAAAAAAPwAAA/8AAB/+AAD//AAD4fAAHwPgAHwPgAAAPgAAAfAAAA/AAAD+AAAH8AAAHwAAAPgAAAPgAAAPgAAAAAAAAAAAAAAAAAAHAAAAPgAAAPgAAAPgAAAHAAAAAAAAAAAAAAAAAA");
+      return getIcon(def || "unknown");
   }
 }
 /*
@@ -256,21 +287,32 @@ function getMessageImageCol(msg, def) {
     "sms message": "#0ff",
     // brands, according to https://www.schemecolor.com/?s (picking one for multicolored logos)
     // all dithered on B2, but we only use the color for the icons.  (Could maybe pick the closest 3-bit color for B2?)
+    "bibel": "#54342c",
+    "discord": "#738adb",
     "facebook": "#4267b2",
     "gmail": "#ea4335",
     "google home": "#fbbc05",
-    "home assistant": "#fff", // ha-blue is #41bdf5, but that's the background
     "hangouts": "#1ba261",
+    "home assistant": "#fff", // ha-blue is #41bdf5, but that's the background
     "instagram": "#dd2a7b",
+    "liferando": "#ee5c00",
     "messenger": "#0078ff",
+    "nina": "#e57004",
     "outlook mail": "#0072c6",
+    "post & dhl": "#f2c101",
+    "signal": "#00f",
     "skype": "#00aff0",
     "slack": "#e51670",
-    "threema": "#000",
+    "snapchat": "#ff0",
+    "teams": "#464eb8",
     "telegram": "#0088cc",
+    "threema": "#000",
+    "to do": "#3999e5",
+    "twitch": "#6441A4",
     "twitter": "#1da1f2",
     "whatsapp": "#4fce5d",
     "wordfeud": "#e7d3c7",
+    "youtube": "#f00",
   }[(msg.src || "").toLowerCase()] || (def!==undefined ? def : g.theme.fg);
 }
 
