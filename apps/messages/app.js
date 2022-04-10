@@ -444,7 +444,7 @@ function showMusic() {
   }, ud => {
     if (!Bangle.musicControl) return;
     if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
-    else {
+    else if (!B2) { // Bangle.js 2 links the button to back()
       toggleMusic();
       const icon = (music.state==="play") ? "music" : "pause";
       layout.music.src = getIcon(icon);
