@@ -406,8 +406,8 @@ function showMusic() {
 
   function updateLabels() {
     trackName = reduceStringAndPad(music.track, trackScrollOffset, 13);
-    artistName = reduceStringAndPad(music.artist, artistScrollOffset, 21);
-    albumName = reduceStringAndPad(music.album, albumScrollOffset, 21);
+    artistName = reduceStringAndPad(music.artist, artistScrollOffset, 19);
+    albumName = reduceStringAndPad(music.album, albumScrollOffset, 19);
 
     trackScrollOffset++;
     artistScrollOffset++;
@@ -436,7 +436,7 @@ function showMusic() {
       {type: "txt", halign: 0, font: fontHuge, bgCol: g.theme.bg, label: trackName, fillx: 1, filly: 1, pad: 2, id: "track"},
       music.dur ? {type: "txt", font: fontMedium, bgCol: g.theme.bg, label: fmtTime(music.dur)} : {}
     ]
-  });
+  }, {lazy: true});
   layout.render();
   Bangle.setUI({
     mode: "updown",
@@ -536,7 +536,9 @@ function showMain() {
 function showGridMenu(items) {
   let menu = {};
   for(let key in items) {
-    menu[key] = items[key].cb;
+    const item = items[key];
+    if (key==="") menu[key] = {title: item.title};
+    else menu[key] = item.cb;
   }
   return E.showMenu(menu);
 }
@@ -943,7 +945,7 @@ function showMessage(num, bottom) {
       },
     }, dir => {
       delete msg.new;
-      if (dir=== -1) { // up
+      if (dir===1) { // down
         if (h>ar.h-fh && offset<h-(ar.h-fh)) {
           move(+PAGE_SIZE);
         } else if (num<MESSAGES.length-1) { // bottom reached: show next
@@ -952,7 +954,7 @@ function showMessage(num, bottom) {
         } else {
           buzzOnce(); // already at bottom of last message
         }
-      } else if (dir===1) { // down
+      } else if (dir=== -1) { // up
         if (offset>0) {
           move(-PAGE_SIZE);
         } else if (num>0) { // top reached: show previous
