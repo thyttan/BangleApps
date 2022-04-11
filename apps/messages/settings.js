@@ -71,7 +71,7 @@
         onchange: v => updateSetting("debugLog", v)
       },
     };
-    if (MESSAGES && MESSAGES.length) { // only when in-app
+    if (global.MESSAGES && MESSAGES.length) { // only when in-app
       menu[/*LANG*/"Delete all"] = () => {
         E.showPrompt(/*LANG*/"Are you sure?", {title:/*LANG*/"Delete All Messages"}).then(isYes => {
           if (isYes) MESSAGES = [];
