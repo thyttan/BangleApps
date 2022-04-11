@@ -749,8 +749,8 @@ function respondToMessage(reply) {
 }
 function showMessageActions() {
   let title = MESSAGES[messageNum].title || "";
-  if (g.setFont(fontBig).stringMetrics(title).width>Bangle.appRect.w) {
-    title = g.setFont(fontBig).wrapString("..."+title, Bangle.appRect.w)[0].substring(3)+"...";
+  if (g.setFont(fontBig).stringMetrics(title).width>Bangle.appRect.w-(B2?0:20)) {
+    title = g.setFont(fontBig).wrapString("..."+title, Bangle.appRect.w-(B2?0:20))[0].substring(3)+"...";
   }
   clearStuff();
   let grid = {
@@ -838,23 +838,23 @@ function showMessage(num, bottom) {
       .drawString(
         "\0"+atob("CAiBACBA/EIiAnwA")+ // back
         "\0"+atob("CAiBAEgkEgkSJEgA"), // >>
-        ar.x, ar.y2
+        ar.x+(B2?0:28), ar.y2
       );
     // center message count+hints: swipe up/down for next/prev message
     const footer = `  ${num+1}/${MESSAGES.length}  `,
       fw = g.stringWidth(footer);
     g.setFontAlign(0, 1); // bottom center
-    if (num>0 && offset<=0)
+    if (B2 && num>0 && offset<=0)
       g.drawString("\0"+atob("CAiBAABBIhRJIhQI"), ar.x+ar.w/2-fw/2, ar.y2); // ^ swipe to prev
     g.drawString(footer, ar.x+ar.w/2, ar.y2);
-    if (num<MESSAGES.length-1 && offset>=h-(ar.h-fh))
+    if (B2 && num<MESSAGES.length-1 && offset>=h-(ar.h-fh))
       g.drawString("\0"+atob("CAiBABAoRJIoRIIA"), ar.x+ar.w/2+fw/2, ar.y2); // v swipe to next
     // right hint: swipe from right for message actions
     g.setFontAlign(1, 1) // bottom right
       .drawString(
         "\0"+atob("CAiBABIkSJBIJBIA")+ // <<
         "\0"+atob("CAiBAP8AAP8AAP8A"), // = ("hamburger menu")
-        ar.x2, ar.y2
+        ar.x2-(B2?0:28), ar.y2
       );
   }
 
@@ -1050,7 +1050,9 @@ function getMessageLayoutInfo(msg) {
   if (settings.button) h += 44; // icon(24) + padding(2x2) + internal btn padding(16)
 
   w = Bangle.appRect.w;
-  if (h>Bangle.appRect.h) w--; // 1px scrollbar
+  // we use 10px for footer
+  if (h>Bangle.appRect.h-10) w--; // 1px scrollbar
+  else h=Bangle.appRect.h-10; // always expand to full height
 
   return {
     src: src,
@@ -1084,6 +1086,7 @@ function getMessageLayout(msg) {
         ]
       },
       {type: "txt", font: info.bodyFont, label: info.body, fillx: 1, filly: 1, pad: 2},
+      {filly: 1},
       settings.button ? {
         type: "h", c: [
           B2 ? {} : {fillx: 1}, // Bangle.js 1: touching right side = press button
