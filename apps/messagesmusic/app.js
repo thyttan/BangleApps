@@ -13,6 +13,3 @@ if (!settings.openMusic) {
 } else {
   showMusic();
 }
-
-
-{}};
