@@ -62,6 +62,8 @@ function setButtons(){
       var n = FACES.length-1;
       iface+=inc;
       iface = iface>n?0:iface<0?n:iface;
+      //Print to console for debugging
+      print('\n', inc, ' : ', iface);
       stopdraw();
       face = FACES[iface]();
       startdraw();
@@ -81,6 +83,5 @@ Bangle.loadWidgets();
 g.clear();
 startdraw();
 setButtons();
-
 
 

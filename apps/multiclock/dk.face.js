@@ -8,6 +8,8 @@
       var scale = W/240;
         
         function drawClock(){
+          // Print to console for debugging
+          print('dk.face.js');
           var now=Date();
           d=now.toString().split(' ');
           var min=d[4].substr(3,2);
@@ -37,4 +39,3 @@
     return getFace;
 
 })();
-
