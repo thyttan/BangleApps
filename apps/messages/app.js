@@ -145,17 +145,13 @@ Bangle.on("message", Bangle.messageListener);
 function onMessageRemoved() {
   if (active==="main") return showMain(); // update message count
   if (active==="messages") {
-    if (MESSAGES.length===0) { // removed last message
-      if (unreadTimeout) load();
-      else return showMain();
-    }
+    if (MESSAGES.length===0) return goBack(); // removed last message
     showMessage(messageNum);
   }
 }
 function onMessageModified(idx) {
   if (!MESSAGES[idx]) return onMessageRemoved();
   const msg = MESSAGES[idx];
-  delete msg._h; // might no longer be valid
   if (msg.new) buzz();
   if (active==="call") return; // don't switch away from incoming call
   if (msg.new || active!=="messages" || messageNum===idx) showMessage(idx);
@@ -318,7 +314,6 @@ function getMessageImageCol(msg, def) {
 
 function showMap() {
   setActive("map");
-  clearStuff();
   delete map.new;
   let m, distance, street, target, eta;
   m = map.title.match(/(.*) - (.*)/);
@@ -385,7 +380,6 @@ function toggleMusic() {
 }
 function showMusic() {
   setActive("music");
-  clearStuff();
   let trackScrollOffset = 0;
   let artistScrollOffset = 0;
   let albumScrollOffset = 0;
@@ -642,7 +636,6 @@ function showSettings() {
 }
 function showCall() {
   setActive("call");
-  clearStuff();
   delete call.new;
   // Normal text message display
   let title = call.title, titleFont = fontHuge, lines, w;
@@ -776,7 +769,10 @@ function showMessageActions() {
  */
 let buzzing = false, moving = false, switching = false;
 function showMessage(num, bottom) {
-  clearStuff();
+  if (num<0) num = 0;
+  if (!num) num = 0; // no number: show first
+  if (num>=MESSAGES.length) num = MESSAGES.length-1;
+  setActive("messages", num);
   if (!MESSAGES.length) {
     // I /think/ this should never happen...
     return E.showPrompt(/*LANG*/"No Messages", {
@@ -785,10 +781,6 @@ function showMessage(num, bottom) {
       buttons: {/*LANG*/"Ok": 1}
     }).then(() => { showMain(); });
   }
-  if (num<0) num = 0;
-  if (!num) num = 0; // no number: show first
-  if (num>=MESSAGES.length) num = MESSAGES.length-1;
-  setActive("messages", num);
   // only clear msg.new on user input
   const msg = MESSAGES[num], // message
     fh = 10; // footer height
