@@ -1,0 +1,16 @@
+{ "id": "books",     
+  "name": "Book on the wrist",  
+  "shortName": "Wrist Book", 
+  "version": "0.01",         
+  "description": "Read a book on your wrist!",     
+  "icon": "icon.png",    
+  "type":"app",          
+  "tags": "book, books, read, wrist, reader, book on the wrist, wrist book", 
+  "supports": ["BANGLEJS2"],  
+  "readme": "README.md",  
+  "allow_emulator":true,     
+  "storage": [                
+    {"name":"books.app.js", "url":"app.js"},
+    {"name":"books.img","url":"app-icon.js","evaluate":true}
+  ]
+}
