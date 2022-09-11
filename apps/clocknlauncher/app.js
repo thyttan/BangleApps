@@ -2,7 +2,7 @@
 *
 */
 
-var mode = "bwclock";
+var mode = "bw";
 
 var dtsettings = Object.assign({
   showClocks: true,
@@ -72,6 +72,7 @@ function draw_icon(p,n,selected) {
 }
 
 function drawPage(p){
+    mode = "dt";
     g.reset();
     g.clearRect(0,24,175,175);
     var O = 88+YOFF/2-12*(Npages/2);
@@ -88,14 +89,39 @@ function drawPage(p){
     g.flip();
 }
 
+function dtTouchHandler(_,p) {
+  var i;
+  for (i=0;i<4;i++){
+      if((page*4+i)<Napps){
+          if (isTouched(p,i)) {
+              draw_icon(page,i,true && !dtsettings.direct);
+              if (selected>=0 || dtsettings.direct) {
+                  if (selected!=i && !dtsettings.direct){
+                      draw_icon(page,selected,false);
+                  } else {
+                      load(apps[page*4+i].src);
+                  }
+              }
+              selected=i;
+              break;
+          }
+      }
+  }
+  if ((i==4 || (page*4+i)>Napps) && selected>=0) {
+      draw_icon(page,selected,false);
+      selected=-1;
+  }
+}
+
+/*
 Bangle.on("swipe",(dirLeftRight, dirUpDown)=>{
     selected = 0;
     oldselected=-1;
     //if(dtsettings.swipeExit && dirLeftRight==1) draw();
-    if (dirUpDown==-1/*||dirLeftRight==-1*/){
+    if (dirUpDown==-1){
         ++page; if (page>maxPage) page=0;
         drawPage(page);
-    } else if (dirUpDown==1/*||(dirLeftRight==1 && !dtsettings.swipeExit)*/){
+    } else if (dirUpDown==1){
         --page; if (page<0) page=maxPage;
         drawPage(page);
     } else if (dirLeftRight==1) {
@@ -103,6 +129,7 @@ Bangle.on("swipe",(dirLeftRight, dirUpDown)=>{
     } else if (dirLeftRight==-1) {
       drawPage(0);}
 });
+*/
 
 function isTouched(p,n){
     if (n<0 || n>3) return false;
@@ -111,6 +138,7 @@ function isTouched(p,n){
     return (p.x>x1 && p.y>y1 && p.x<x2 && p.y<y2);
 }
 
+/*
 Bangle.on("touch",(_,p)=>{
     var i;
     for (i=0;i<4;i++){
@@ -134,6 +162,7 @@ Bangle.on("touch",(_,p)=>{
         selected=-1;
     }
 });
+*/
 
 /*
 Bangle.loadWidgets();
@@ -661,6 +690,7 @@ function measureAltitude(callbackFun){
 * DRAW
 */
 function draw() {
+  mode = "bw";
   // Queue draw again
   queueDraw();
 
@@ -841,7 +871,91 @@ Bangle.on('charging',function(charging) {
   bwsettings.menuPosY = 1;
   draw();
 });
+function bwTouchHandler(btn, e) {
+  
+  var widget_size = isFullscreen() ? 0 : 20; // Its not exactly 24px -- empirically it seems that 20 worked better...
+  var left = parseInt(g.getWidth() * 0.22);
+  var right = g.getWidth() - left;
+  var upper = parseInt(g.getHeight() * 0.22) + widget_size;
+  var lower = g.getHeight() - upper;
 
+  var is_upper = e.y < upper;
+  var is_lower = e.y > lower;
+  var is_left = e.x < left && !is_upper && !is_lower;
+  var is_right = e.x > right && !is_upper && !is_lower;
+  var is_center = !is_upper && !is_lower && !is_left && !is_right;
+
+  if(is_lower){
+    Bangle.buzz(40, 0.6);
+    bwsettings.menuPosY = (bwsettings.menuPosY+1) % menu[bwsettings.menuPosX].length;
+
+    // Handle custom menu entry function
+    var menuEntry = getMenuEntry();
+    if(menuEntry.length > 2){
+      menuEntry[2]();
+    }
+
+    drawTime();
+  }
+
+  if(is_upper){
+    if(e.y < widget_size){
+      return;
+    }
+
+    Bangle.buzz(40, 0.6);
+    bwsettings.menuPosY  = bwsettings.menuPosY-1;
+    bwsettings.menuPosY = bwsettings.menuPosY < 0 ? menu[bwsettings.menuPosX].length-1 : bwsettings.menuPosY;
+
+    // Handle custom menu entry function
+    var menuEntry = getMenuEntry();
+    if(menuEntry.length > 3){
+      menuEntry[3]();
+    }
+
+    drawTime();
+  }
+
+  if(is_right){
+    // A bit hacky but we ensure that always the first agenda entry is shown...
+    agendaIdx = 0;
+
+    Bangle.buzz(40, 0.6);
+    bwsettings.menuPosX = (bwsettings.menuPosX+1) % menu.length;
+    bwsettings.menuPosY = 0;
+    drawTime();
+  }
+
+  if(is_left){
+    // A bit hacky but we ensure that always the first agenda entry is shown...
+    agendaIdx = 0;
+
+    Bangle.buzz(40, 0.6);
+    bwsettings.menuPosY = 0;
+    bwsettings.menuPosX  = bwsettings.menuPosX-1;
+    bwsettings.menuPosX = bwsettings.menuPosX < 0 ? menu.length-1 : bwsettings.menuPosX;
+    drawTime();
+  }
+
+  if(is_center){
+    var menuEntry = getMenuEntry();
+    if(menuEntry.length > 4 && menuEntry[4] != null){
+      Bangle.buzz(80, 0.6).then(()=>{
+        try{
+          menuEntry[4]();
+          setTimeout(()=>{
+            Bangle.buzz(80, 0.6);
+            drawTime();
+          }, 250);
+        } catch(ex){
+          // In case it fails, we simply ignore it.
+        }
+      }
+      );
+    }
+  }
+}
+/*
 Bangle.on('touch', function(btn, e){
   var widget_size = isFullscreen() ? 0 : 20; // Its not exactly 24px -- empirically it seems that 20 worked better...
   var left = parseInt(g.getWidth() * 0.22);
@@ -925,6 +1039,7 @@ Bangle.on('touch', function(btn, e){
     }
   }
 });
+*/
 
 /*
 E.on("kill", function(){
@@ -945,14 +1060,14 @@ E.on("kill", function(){
 g.setTheme({bg:g.theme.fg,fg:g.theme.bg, dark:!g.theme.dark}).clear();
 
 
-
+/*
 // Show launcher when middle button pressed
 Bangle.setUI({
   mode : "custom",
-  clock : 0,
+  //clock : 0,
   btn : drawPage(0)
 });
-
+*/
 
 // Load widgets and draw clock the first time
 Bangle.loadWidgets();
@@ -963,3 +1078,27 @@ for (let wd of WIDGETS) {wd._draw=wd.draw; wd._area=wd.area;}
 
 // Draw first time
 draw();
+
+
+Bangle.setUI({
+  mode : "custom",
+  swipe : function(dirLeftRight, dirUpDown) {
+    selected = 0;
+    oldselected=-1;
+    //if(dtsettings.swipeExit && dirLeftRight==1) draw();
+    if (dirUpDown==-1/*||dirLeftRight==-1*/){
+        ++page; if (page>maxPage) page=0;
+        drawPage(page);
+    } else if (dirUpDown==1/*||(dirLeftRight==1 && !dtsettings.swipeExit)*/){
+        --page; if (page<0) page=maxPage;
+        drawPage(page);
+    } else if (dirLeftRight==1) {
+      draw();
+    } else if (dirLeftRight==-1) {
+      drawPage(0);}
+  },
+  touch : function(btn,e) {
+    if (mode == "dt") {dtTouchHandler(btn,e);}
+    if (mode == "bw") {bwTouchHandler(btn, e);}
+  },
+});
