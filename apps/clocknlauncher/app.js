@@ -1,6 +1,9 @@
 /* Desktop launcher
 *
 */
+
+var mode = "bwclock";
+
 var dtsettings = Object.assign({
   showClocks: true,
   showLaunchers: true,
@@ -132,12 +135,12 @@ Bangle.on("touch",(_,p)=>{
     }
 });
 
-
+/*
 Bangle.loadWidgets();
 g.clear();
 Bangle.drawWidgets();
 drawPage(0);
-
+*/
 
 
 /************
@@ -959,7 +962,4 @@ Bangle.loadWidgets();
 for (let wd of WIDGETS) {wd._draw=wd.draw; wd._area=wd.area;}
 
 // Draw first time
-//draw();
-
-
-
+draw();
