@@ -8,8 +8,6 @@
   "supports": ["BANGLEJS2"],
   "allow_emulator": true,
   "storage": [
-    {"name":"clocknlaunch.app.js","url":"app.js"},
-    {"name":"clocknlaunch.img","url":"app-icon.js","evaluate":true},
-    {"name":"clocknlaunch.settings.js","url":"settings.js"}
+    {"name":"clocknlaunch.app.js","url":"app.js"}
   ]
 }
