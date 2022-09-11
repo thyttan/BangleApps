@@ -1069,17 +1069,6 @@ Bangle.setUI({
 });
 */
 
-// Load widgets and draw clock the first time
-Bangle.loadWidgets();
-
-// Cache draw function for dynamic screen to hide / show widgets
-// Bangle.loadWidgets() could also be called later on but its much slower!
-for (let wd of WIDGETS) {wd._draw=wd.draw; wd._area=wd.area;}
-
-// Draw first time
-draw();
-
-
 Bangle.setUI({
   mode : "custom",
   swipe : function(dirLeftRight, dirUpDown) {
@@ -1102,3 +1091,14 @@ Bangle.setUI({
     if (mode == "bw") {bwTouchHandler(btn, e);}
   },
 });
+
+// Load widgets and draw clock the first time
+Bangle.loadWidgets();
+
+// Cache draw function for dynamic screen to hide / show widgets
+// Bangle.loadWidgets() could also be called later on but its much slower!
+for (let wd of WIDGETS) {wd._draw=wd.draw; wd._area=wd.area;}
+
+// Draw first time
+draw();
+
