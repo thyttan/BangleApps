@@ -14,11 +14,6 @@ const W = g.getWidth();
 const H = g.getHeight();
 
 /************
- * Global data
- */
-var pressureData;
-
-/************
  * Settings
  */
 let settings = {
@@ -203,13 +198,14 @@ function imgMountain() {
 var menu = [
   [
     function(){ return [ null, null ] },
+    function(){ return [ "Week " + weekOfYear(), null ] },
   ],
   [
     function(){ return [ "Bangle", imgWatch() ] },
     function(){ return [ E.getBattery() + "%", Bangle.isCharging() ? imgCharging() : imgBattery() ] },
     function(){ return [ getSteps(), imgSteps() ] },
     function(){ return [ Math.round(Bangle.getHealthStatus("last").bpm) + " bpm", imgBpm()] },
-    function(){ return [ getAltitude(), imgMountain() ]},
+    function(){ return [ measureAltitude, imgMountain() ]},
   ]
 ]
 
@@ -346,7 +342,22 @@ function getMenuEntry(){
   // could be larger than infoArray.length...
   settings.menuPosX = settings.menuPosX % menu.length;
   settings.menuPosY = settings.menuPosY % menu[settings.menuPosX].length;
-  return menu[settings.menuPosX][settings.menuPosY]();
+  var menuEntry = menu[settings.menuPosX][settings.menuPosY]();
+
+  if(menuEntry[0] == null){
+    return menuEntry;
+  }
+
+  // For the first entry we always convert it into a callback function
+  // such that the menu is compatible with async functions such as
+  // measuring the pressure, altitude or sending http requests...
+  if(typeof menuEntry[0] !== 'function'){
+    var value = menuEntry[0];
+    menuEntry[0] = function(callbackFun){
+      callbackFun(String(value), settings.menuPosX, settings.menuPosY);
+    }
+  }
+  return menuEntry;
 }
 
 
@@ -377,14 +388,6 @@ function getSteps() {
   }
 
   return steps;
-}
-
-
-function getAltitude(){
-  if(pressureData && pressureData.altitude){
-    return Math.round(pressureData.altitude) + "m";
-  }
-  return "???";
 }
 
 
@@ -419,6 +422,19 @@ function getWeather(){
     wdir: " ? ",
     wrose: " ? "
   };
+}
+
+// From https://weeknumber.com/how-to/javascript
+function weekOfYear() {
+    var date = new Date();
+    date.setHours(0, 0, 0, 0);
+    // Thursday in current week decides the year.
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    // January 4 is always in week 1.
+    var week1 = new Date(date.getFullYear(), 0, 4);
+    // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000
+                          - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
 
@@ -479,16 +495,20 @@ function decreaseAlarm(idx){
 }
 
 
-function handleAsyncData(){
+function measureAltitude(callbackFun){
+  var oldX = settings.menuPosX;
+  var oldY = settings.menuPosY;
   try{
-
-    if (settings.menuPosX == 1){
-      Bangle.getPressure().then(data=>{
-        pressureData = data
-      });
-    }
-
-  }catch(ex){ }
+    Bangle.getPressure().then(data=>{
+      if(data && data.altitude && data.altitude > -100){
+        callbackFun(Math.round(data.altitude) + "m", oldX, oldY);
+      } else {
+        callbackFun("???", oldX, oldY);
+      }
+    });
+  }catch(ex){
+    callbackFun("err", oldX, oldY);
+  }
 }
 
 
@@ -498,9 +518,6 @@ function handleAsyncData(){
 function draw() {
   // Queue draw again
   queueDraw();
-
-  // Now lets measure some data..
-  handleAsyncData();
 
   // Draw clock
   drawDate();
@@ -561,46 +578,55 @@ function drawTime(){
   y += parseInt((H - y)/2) + 5;
 
   var menuEntry = getMenuEntry();
-  var menuName = String(menuEntry[0]);
+  var menuTextFun = menuEntry[0];
   var menuImg = menuEntry[1];
   var printImgLeft = settings.menuPosY != 0;
 
   // Show large or small time depending on info entry
-  if(menuName == null){
+  if(menuTextFun == null){
     g.setLargeFont();
+    g.drawString(timeStr, W/2, y);
+    return;
   } else {
     y -= 15;
     g.setMediumFont();
-  }
-  g.drawString(timeStr, W/2, y);
-
-  // Draw menu if set
-  if(menuName == null){
-    return;
+    g.drawString(timeStr, W/2, y);
   }
 
-  y += 35;
-  g.setFontAlign(0,0);
+  // Async set the menu (could be that some data is async fetched)
+  menuTextFun((menuText, oldX, oldY) => {
 
-  if(menuName.split('\n').length > 1){
-    g.setMiniFont();
-  } else {
-    g.setSmallFont();
-  }
+    // We display the text IFF the user did not change the menu
+    if(settings.menuPosX != oldX || settings.menuPosY != oldY){
+      return;
+    }
 
-  var imgWidth = 0;
-  if(menuImg !== undefined){
-    imgWidth = 24.0;
-    var strWidth = g.stringWidth(menuName);
-    var scale = imgWidth / menuImg.width;
-    g.drawImage(
-      menuImg,
-      W/2 + (printImgLeft ? -strWidth/2-4 : strWidth/2+4) - parseInt(imgWidth/2),
-      y - parseInt(imgWidth/2),
-      { scale: scale }
-    );
-  }
-  g.drawString(menuName, printImgLeft ? W/2 + imgWidth/2 + 2 : W/2 - imgWidth/2 - 2, y+3);
+    // As its a callback, we have to ensure that the color
+    // font etc. is still correct...
+    g.setColor(g.theme.bg);
+    g.setFontAlign(0,0);
+    y += 35;
+
+    if(menuText.split('\n').length > 1){
+      g.setMiniFont();
+    } else {
+      g.setSmallFont();
+    }
+
+    var imgWidth = 0;
+    if(menuImg){
+      imgWidth = 24.0;
+      var strWidth = g.stringWidth(menuText);
+      var scale = imgWidth / menuImg.width;
+      g.drawImage(
+        menuImg,
+        W/2 + (printImgLeft ? -strWidth/2-4 : strWidth/2+4) - parseInt(imgWidth/2),
+        y - parseInt(imgWidth/2),
+        { scale: scale }
+      );
+    }
+    g.drawString(menuText, printImgLeft ? W/2 + imgWidth/2 + 2 : W/2 - imgWidth/2 - 2, y+3);
+  });
 }
 
 
