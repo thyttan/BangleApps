@@ -1090,6 +1090,7 @@ Bangle.setUI({
     if (mode == "dt") {dtTouchHandler(btn,e);}
     if (mode == "bw") {bwTouchHandler(btn, e);}
   },
+  clock : 1,
 });
 
 // Load widgets and draw clock the first time
