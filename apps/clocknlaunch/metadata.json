@@ -3,7 +3,7 @@
   "name": "clocknlauncher",
   "version": "0.04",
   "description": "!!! This will mess with settings for BWClock and Desktop Launcher!!!! Proof of concept for making switching between clock and launcher faster.",
-  "type": "launch",
+  "type": "clock",
   "tags": ["clock","launcher"],
   "icon": "app.png",
   "supports": ["BANGLEJS2"],
