@@ -12,8 +12,8 @@ var dtsettings = Object.assign({
   swipeExit: false
 }, require('Storage').readJSON("dtlaunch.json", true) || {});
 
-if( dtsettings.oneClickExit)
-  setWatch(_=> draw(), BTN1);
+//if( dtsettings.oneClickExit)
+//  setWatch(_=> draw(), BTN1);
 
 var s = require("Storage");
 var apps = s.list(/\.info$/).map(app=>{
@@ -1089,6 +1089,10 @@ Bangle.setUI({
   touch : function(btn,e) {
     if (mode == "dt") {dtTouchHandler(btn,e);}
     if (mode == "bw") {bwTouchHandler(btn, e);}
+  },
+  btn : function() {
+    if (mode == "dt" && dtsettings.oneClickExit) {draw();}
+    if (mode == "bw") {drawPage(0);}
   },
   clock : 1,
 });
