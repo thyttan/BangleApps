@@ -9,7 +9,7 @@
   "allow_emulator": true,
   "storage": [
     {"name":"clocknlaunch.app.js","url":"app.js", "supports": ["BANGLEJS2"]},
-    {"name":"clocknlaunch.img","url":"app.png","evaluate":true}
+    {"name":"clocknlaunch.img","url":"icon.js","evaluate":true}
   ],
   "dependencies": {"bwclk":"app", "dtlaunch":"app"},
   "data": [{"name":"clocknlaunch.json"}]
