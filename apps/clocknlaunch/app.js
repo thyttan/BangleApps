@@ -1088,13 +1088,13 @@ Bangle.setUI({
   },
   touch : function(btn,e) {
     if (mode == "dt") {dtTouchHandler(btn,e);}
-    if (mode == "bw") {bwTouchHandler(btn, e);}
+    else if (mode == "bw") {bwTouchHandler(btn, e);}
   },
   btn : function() {
-    if (mode == "dt" && dtsettings.oneClickExit) {draw();}
-    if (mode == "bw") {drawPage(0);}
+    if (mode == "dt") {draw();}
+    else if (mode == "bw") {drawPage(0);}
   },
-  clock : 0,
+  //clock : 1,
 });
 
 // Load widgets and draw clock the first time
