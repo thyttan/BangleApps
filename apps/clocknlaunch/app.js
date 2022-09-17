@@ -1094,7 +1094,7 @@ Bangle.setUI({
     if (mode == "dt") {draw();}
     else if (mode == "bw") {drawPage(0);}
   },
-  //clock : 1,
+  clock : 1,
 });
 
 // Load widgets and draw clock the first time
