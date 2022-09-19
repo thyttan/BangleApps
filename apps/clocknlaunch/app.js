@@ -1086,7 +1086,7 @@ Bangle.setUI({
         drawPage(page);
     } else if (dirLeftRight==1 && mode == "dt") {
       draw();
-    } else if (dirLeftRight==-1 && mode == "dw") {
+    } else if (dirLeftRight==-1 && mode == "bw") {
       drawPage(dtLastPage);}
   },
   touch : function(btn,e) {
