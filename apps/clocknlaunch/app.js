@@ -702,7 +702,6 @@ function draw() {
     drawTime();
     drawLock();
     drawWidgets();
-  }
 }
 
 
