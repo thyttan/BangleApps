@@ -1,0 +1,15 @@
+{
+  "id": "testintents",
+  "name": "TestIntents",
+  "version": "0.14",
+  "description": "Test sending Android intents via Gadgetbridge initiated on the Bangle.js introduced in this PR: https://codeberg.org/Freeyourgadget/Gadgetbridge/pulls/2769.",
+  "icon": "app.png",
+  "tags": "tool,bluetooth",
+  "supports": ["BANGLEJS", "BANGLEJS2"],
+  "readme": "README.md",
+  "storage": [
+    {"name":"testintents.app.js","url":"app.js"},
+    {"name":"testintents.img","url":"app-icon.js","evaluate":true}
+  ],
+  "dependencies": {"kbmulti":"app", "messages":"app", "messagesmusic":"app"}
+}

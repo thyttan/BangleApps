@@ -1,0 +1,14 @@
+0.01: Initial version
+0.02: Add search and play album
+0.03: Add flags
+0.04: Add wake intents
+0.05: Add broadcast intent and more
+0.06: Modify wake intent
+0.07: Add entry wake intent x2
+0.08: Adjust to updated WakeActivity.java
+0.09: Remove action-info from wake intent
+0.10: Service test intent
+0.11: Service test intent update - poweramp
+0.12: Fix service test intent
+0.13: change service test intent
+0.14: change servicd test intent again
