@@ -692,15 +692,17 @@ function measureAltitude(callbackFun){
 * DRAW
 */
 function draw() {
-  mode = "bw";
   // Queue draw again
   queueDraw();
 
   // Draw clock
-  drawDate();
-  drawTime();
-  drawLock();
-  drawWidgets();
+  if (mode == "bw") {
+    drawDate();
+    drawTime();
+    drawLock();
+    drawWidgets();
+  }
+  mode = "bw";
 }
 
 

@@ -1,7 +1,7 @@
 {
   "id": "clocknlaunch",
   "name": "clocknlauncher",
-  "version": "0.06",
+  "version": "0.07",
   "description": "!!! This will mess with settings for BWClock and Desktop Launcher!!!! Proof of concept for making switching between clock and launcher faster.",
   "type": "clock",
   "tags": ["clock","launcher"],

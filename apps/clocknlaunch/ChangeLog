@@ -1,6 +1,7 @@
 0.01: Initial proof of concept.
 0.02: Getting it to work with the app loader, hopefully...
-0.03: Switch type
+0.03: Switch type.
 0.04: Hopefully fixed the problem... id and filenames didn't match.
-0.05: Revert inverted theme
-0.06: Remeber dtlaunch page
+0.05: Revert inverted theme.
+0.06: Remeber dtlaunch page.
+0.07: Don't draw updated clock if on launcher.
