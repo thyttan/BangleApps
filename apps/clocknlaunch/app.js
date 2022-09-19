@@ -1078,15 +1078,15 @@ Bangle.setUI({
     selected = 0;
     oldselected=-1;
     //if(dtsettings.swipeExit && dirLeftRight==1) draw();
-    if (dirUpDown==-1/*||dirLeftRight==-1*/){
+    if (dirUpDown==-1 && mode == "dt"){
         ++page; if (page>maxPage) page=0;
         drawPage(page);
-    } else if (dirUpDown==1/*||(dirLeftRight==1 && !dtsettings.swipeExit)*/){
+    } else if (dirUpDown==1 && mode == "dt"){
         --page; if (page<0) page=maxPage;
         drawPage(page);
-    } else if (dirLeftRight==1) {
+    } else if (dirLeftRight==1 && mode == "dt") {
       draw();
-    } else if (dirLeftRight==-1) {
+    } else if (dirLeftRight==-1 && mode == "dw") {
       drawPage(dtLastPage);}
   },
   touch : function(btn,e) {
