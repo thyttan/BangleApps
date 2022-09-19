@@ -3,6 +3,7 @@
 */
 
 var mode = "bw";
+var dtLastPage = 0;
 
 var dtsettings = Object.assign({
   showClocks: true,
@@ -73,8 +74,9 @@ function draw_icon(p,n,selected) {
 
 function drawPage(p){
     mode = "dt";
+    dtLastPage = p;
     g.reset();
-    g.clearRect(0,24,175,175);
+    g.clearRect(Bangle.appRect);
     var O = 88+YOFF/2-12*(Npages/2);
     for (var j=0;j<Npages;j++){
         var y = O+j*12;
@@ -1087,12 +1089,14 @@ Bangle.setUI({
       drawPage(0);}
   },
   touch : function(btn,e) {
-    if (mode == "dt") {dtTouchHandler(btn,e);}
-    else if (mode == "bw") {bwTouchHandler(btn, e);}
+    if (mode == "dt") {
+      dtTouchHandler(btn,e);
+    } else if (mode == "bw") {bwTouchHandler(btn, e);}
   },
   btn : function() {
-    if (mode == "dt") {draw();}
-    else if (mode == "bw") {drawPage(0);}
+    if (mode == "dt") {
+      draw();
+    } else if (mode == "bw") {drawPage(dtLastPage);}
   },
   clock : 1,
 });
