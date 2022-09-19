@@ -1086,7 +1086,7 @@ Bangle.setUI({
     } else if (dirLeftRight==1) {
       draw();
     } else if (dirLeftRight==-1) {
-      drawPage(0);}
+      drawPage(dtLastPage);}
   },
   touch : function(btn,e) {
     if (mode == "dt") {
