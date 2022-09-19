@@ -695,14 +695,14 @@ function draw() {
   // Queue draw again
   queueDraw();
 
+  mode = "bw";
+
   // Draw clock
-  if (mode == "bw") {
     drawDate();
     drawTime();
     drawLock();
     drawWidgets();
   }
-  mode = "bw";
 }
 
 
@@ -838,7 +838,7 @@ function queueDraw() {
   if (drawTimeout) clearTimeout(drawTimeout);
   drawTimeout = setTimeout(function() {
     drawTimeout = undefined;
-    draw();
+    if (mode == "bw") draw();
   }, 60000 - (Date.now() % 60000));
 }
 
