@@ -1,0 +1,14 @@
+{ "id": "widhide",
+  "name": "Hidable Widget Bar",
+  "shortName" : "Widget Hide",
+  "version": "0v01", 
+  "icon": "icons8-hide-toolbar-48.png",
+  "description": "Show and hide the widget bar with a swipe, on any clock face",
+  "type":"bootloader",
+  "tags": "system",
+  "supports": ["BANGLEJS2"],
+  "readme": "README.md",
+  "storage": [
+    {"name":"widhide.boot.js","url":"widhide.boot.js"}
+  ]
+}

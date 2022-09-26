@@ -73,15 +73,19 @@ g.clear();
 loadSettings();
 loadThemeColors();
 
-offset_widgets = settings.showWidgets ? 24 : 0;
-let available_height = g.getHeight() - offset_widgets;
+Bangle.setUI('clock');
+if (settings.showWidgets) {
+  Bangle.loadWidgets();
+  Bangle.drawWidgets();
+}
 
 // Calculate grid size and offsets
-let s = Math.floor(available_height/17);
+let s = Math.floor(Bangle.appRect.h/17);
 let num_squares_w = Math.round(g.getWidth()/s) - 1;
-let num_squares_h = Math.round(available_height/s) - 1;
+let num_squares_h = Math.round(Bangle.appRect.h/s) - 1;
 let o_w = Math.floor((g.getWidth() - num_squares_w * s)/2);
-let o_h = Math.floor((g.getHeight() - num_squares_h * s+offset_widgets)/2);
+//let o_h = Math.floor((g.getHeight() - num_squares_h * s+offset_widgets)/2);
+let o_h = Math.floor((Bangle.appRect.h - num_squares_h * s)/2 + Bangle.appRect.y);
 let mid_x = Math.floor(num_squares_w/2);
 let mid_y = Math.floor((num_squares_h-1)/2);
 
@@ -95,9 +99,3 @@ Bangle.on('lcdPower',on=>{
     drawTimeout = undefined;
   }
 });
-
-Bangle.setUI('clock');
-if (settings.showWidgets) {
-  Bangle.loadWidgets();
-  Bangle.drawWidgets();
-}
