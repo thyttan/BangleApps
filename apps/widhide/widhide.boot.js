@@ -1,7 +1,8 @@
 // widhide.boot.js
 
-Bangle.widgetsShown = false;
 Bangle.widgetBuffer = Graphics.createArrayBuffer(g.getWidth(), 24, 8, {msb: true});
+Bangle.widgetBuffer.shown = false;
+Bangle.widgetBuffer.offset = -24;
 
 Bangle.loadWidgets = (o => () => {
 //  console.log('loadWidgets');
@@ -17,12 +18,12 @@ Bangle.loadWidgets = (o => () => {
       var w = WIDGETS[wi];
       w.olddraw = w.draw;
       w.draw = function(){
-        if (Bangle.widgetsShown) {
+        if (Bangle.widgetBuffer.shown) {
           let _g = g;
           g = Bangle.widgetBuffer;
           this.olddraw(this);
           g = _g;
-          Bangle.setLCDOverlay(Bangle.widgetBuffer, 0, 0);
+          Bangle.setLCDOverlay(Bangle.widgetBuffer, 0, Bangle.widgetBuffer.offset);
         }
       };
     });
@@ -32,13 +33,13 @@ Bangle.loadWidgets = (o => () => {
 Bangle.drawWidgets = (o => () => {
   if (!Bangle.CLOCK) return o();
 //  console.log('drawWidgets');
-  if (Bangle.widgetsShown) {
+  if (Bangle.widgetBuffer.shown) {
     Bangle.widgetBuffer.clear(1);
     let _g = g;
     g = Bangle.widgetBuffer;
     o();
     g = _g;
-    Bangle.setLCDOverlay(Bangle.widgetBuffer, 0, 0);
+    Bangle.setLCDOverlay(Bangle.widgetBuffer, 0, Bangle.widgetBuffer.offset);
   }
 })(Bangle.drawWidgets);
 
@@ -46,14 +47,25 @@ Bangle.on("swipe", (_, d) => {
   if (!Bangle.CLOCK || !d) return; // not a clock, or horizontal swipe
   if (!Bangle.widgetBuffer) Bangle.drawWidgets();
 
-  if (d>0 & !Bangle.widgetsShown) {
-//    console.log('Show widgets');
+  if (d>0 & !Bangle.widgetBuffer.shown) { // show widgets
     if (typeof WIDGETS != 'object') Bangle.loadWidgets();
-    Bangle.widgetsShown = true;
+    Bangle.widgetBuffer.shown = true;
+    Bangle.widgetBuffer.offset = -24;
     Bangle.drawWidgets();
-  } else if (d<0 & Bangle.widgetsShown){
-//    console.log('Hide widgets');
-    Bangle.widgetsShown = false;
-    Bangle.setLCDOverlay();
+  } else if (d<0 & Bangle.widgetBuffer.shown){ // hide widgets
+    Bangle.widgetBuffer.shown = false;
+    Bangle.widgetBuffer.offset = 0;
+  } else {
+    return;
   }
+  function anim() {
+    Bangle.widgetBuffer.offset += d;
+    Bangle.setLCDOverlay(Bangle.widgetBuffer, 0, Bangle.widgetBuffer.offset);
+    if (Bangle.widgetBuffer.offset >= 0 || Bangle.widgetBuffer.offset <= -24) {
+      clearTimeout(animTimeout);
+      return;
+    }
+    animTimeout = setTimeout(anim, 1);
+  }
+  var animTimeout = setTimeout(anim, 1);
 });
