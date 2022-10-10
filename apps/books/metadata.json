@@ -1,6 +1,6 @@
 { "id": "books",     
   "name": "Book on the wrist",  
-  "shortName": "Wrist Book", 
+  "shortName": "Book on wrist", 
   "version": "0.01",         
   "description": "Read a book on your wrist!",     
   "icon": "icon.png",    
