@@ -1,9 +1,10 @@
 /*
 Todo
-- remove last entry in words array (It's often an incomplete word b/c of how book.txt is read with require)
-  - read the size in bytes of the string removed and consider it when reading the next section of book.txt
+- [DONE] remove last entry in words array (It's often a incomplete word b/c of how book.txt is read with require)
+  - [Done] read the size in bytes of the string removed and consider it when reading the next section of book.txt
 -implement scrolling back and forth seemlessly between sections of book.txt
 */
+
 
 Bangle.loadWidgets();
 
@@ -13,7 +14,7 @@ function setUI() { Bangle.setUI({
   mode : "custom",
   back : load,
   touch : function(n,e) {
-    // Toggle keep screen on.
+    // Toggle keep screen on. Needs changes.
     if (keepOn == false) {
       Bangle.setLCDTimeout(0);
       Bangle.setLCDPower(1);
@@ -26,6 +27,7 @@ function setUI() { Bangle.setUI({
   },
   drag : function(e) {
     counter = counter+e.dx/20 < 0 ? 0: Math.round(counter+e.dx/20); // Update counter to move back and forth in the text.
+    // Todo: If counter <= 0 updateWords to the last section of book.txt, and vice versa if scrolling beyond the words currently stored in 'words'.
     //counter = counter > words.length ? words.length : counter;
     
     wordsPerSecond = wordsPerSecond-e.dy/40; // Change reading speed.
@@ -63,16 +65,25 @@ function setUI() { Bangle.setUI({
 });
 }
 
-length = 10;
+targetLength = 20*2; // in bytes: (# of characters)*(bytes per character) https://stackoverflow.com/a/46735247
+let actualLength;
+let accumulatedLength = 0;
 section = 0;
-function updateWords(section) {
-  sentences = require("Storage").read("book.txt", section*length*4, length*4);
-  return sentences.split(" ");
+function updateWords(startPoint) {
+  sentences = require("Storage").read("book.txt", startPoint, targetLength);
+  words = sentences.split(" ");
+  // remove the last word from words, it's probably incomplete.
+  poped = words.pop();
+  // remove that size in bytes from length variable
+  bytesOfPoped = poped.length*2; // https://stackoverflow.com/a/46735247
+  actualLength = targetLength - bytesOfPoped;
+  accumulatedLength += actualLength;
+  return words;
 }
 
 wordsPerSecond = 1;
 var wordsPerSecondSubt;
-words = updateWords(section);
+words = updateWords(accumulatedLength);
 
 R = Bangle.appRect;
 
@@ -86,7 +97,7 @@ function endOfSentence(ebIn) {
   clearInterval(printInterval);
   g.clearRect(Bangle.appRect);
   section++;
-  words = updateWords(section);
+  words = updateWords(accumulatedLength);
   counter = 0;
   printInterval = setInterval(printWord, 1000/wordsPerSecond, ebIn);
 }
