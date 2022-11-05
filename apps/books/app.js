@@ -28,6 +28,7 @@ function setUI() { Bangle.setUI({
   drag : function(e) {
     counter = counter+e.dx/20 < 0 ? 0: Math.round(counter+e.dx/20); // Update counter to move back and forth in the text.
     // Todo: If counter <= 0 updateWords to the last section of book.txt, and vice versa if scrolling beyond the words currently stored in 'words'.
+    
     //counter = counter > words.length ? words.length : counter;
     
     wordsPerSecond = wordsPerSecond-e.dy/40; // Change reading speed.
