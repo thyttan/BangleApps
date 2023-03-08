@@ -418,8 +418,8 @@ if (process.env.HWVERSION==1) {
     clearWatch(W3);
     clearWatch(W4);
     clearWatch(W5);
-    */
   };
+  */
 } else { // touchscreen?
     selected = "NONE";
   swipeEnabled = true;
@@ -468,7 +468,6 @@ if (process.env.HWVERSION==1) {
     swipe : swipeHandler,
     //remove: removeUI // Uncomment to enable fastloading on exit.
   });
-
 
   Bangle.loadWidgets();
   wu.hide();
