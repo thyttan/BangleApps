@@ -7,27 +7,33 @@
  * Contributors: thyttan https://github.com/thyttan
  */
 
-g.clear();
-require("Font7x11Numeric7Seg").add(Graphics);
+{
 
-var DEFAULT_SELECTION_NUMBERS = '5', DEFAULT_SELECTION_OPERATORS = '=', DEFAULT_SELECTION_SPECIALS = 'R';
-var RIGHT_MARGIN = 20;
-var RESULT_HEIGHT = 40;
-var COLORS = {
+g.clear();
+
+//require("Font7x11Numeric7Seg").add(Graphics);
+Graphics.prototype.setFont7x11Numeric7Seg = function() {
+    return this.setFontCustom(atob("AAAAAAAAAAAAAAAEAIAQAgAAAAAIAHvQBgDAGAL3gAAAAAAAAAAHvAAA9CGEMIYQvAAAACEMIYQwhe8AB4AIAQAgBA94ADwIQwhhDCEDwAHvQhhDCGEIHgAAAgBACAEAHvAAe9CGEMIYQveAA8CEMIYQwhe8AAABjDGAAAA96EEIIQQge8AB7wIQQghBCB4AD3oAwBgDAEAAAAPAhBCCEEL3gAPehDCGEMIQAAAe9CCEEIIQAAAA"), 32, atob("BwAAAAAAAAAAAAAAAAcCAAcHBwcHBwcHBwcFAAAAAAAABwcHBwcH"), 11);
+  };
+
+let DEFAULT_SELECTION_NUMBERS = '5', DEFAULT_SELECTION_OPERATORS = '=', DEFAULT_SELECTION_SPECIALS = 'R';
+let RIGHT_MARGIN = 20;
+let RESULT_HEIGHT = 40;
+let COLORS = {
   // [normal, selected]
   DEFAULT: ['#7F8183', '#A6A6A7'],
   OPERATOR: ['#F99D1C', '#CA7F2A'],
   SPECIAL: ['#65686C', '#7F8183']
 };
 
-var KEY_AREA = [0, RESULT_HEIGHT, g.getWidth(), g.getHeight()];
+let KEY_AREA = [0, RESULT_HEIGHT, g.getWidth(), g.getHeight()];
 
-var screen, screenColor;
-var globalGrid = [4, 5];
-var swipeEnabled;
+let screen, screenColor;
+let globalGrid = [4, 5];
+let swipeEnabled;
 
-var numbersGrid = [3, 4];
-var numbers = {
+let numbersGrid = [3, 4];
+let numbers = {
   '0': {grid: [1, 3], globalGrid: [1, 4], trbl: '2.00'},
   '.': {grid: [2, 3], globalGrid: [2, 4], trbl: '3=.0'},
   '1': {grid: [0, 2], globalGrid: [0, 3], trbl: '4201'},
@@ -41,8 +47,8 @@ var numbers = {
   '9': {grid: [2, 0], globalGrid: [2, 1], trbl: '%*68'},
 };
 
-var operatorsGrid = [2, 3];
-var operators = {
+let operatorsGrid = [2, 3];
+let operators = {
   '+': {grid: [0, 0], globalGrid: [3, 3], trbl: '-+=3'},
   '-': {grid: [1, 0], globalGrid: [3, 2], trbl: '*-+6'},
   '*': {grid: [0, 1], globalGrid: [3, 1], trbl: '/*-9'},
@@ -50,29 +56,29 @@ var operators = {
   '=': {grid: [1, 2], globalGrid: [3, 4], trbl: '+==.'},
 };
 
-var specialsGrid = [2, 2];
-var specials = {
+let specialsGrid = [2, 2];
+let specials = {
   'R': {grid: [0, 0], globalGrid: [0, 0], trbl: 'RN7R', val: 'AC'},
   'N': {grid: [1, 0], globalGrid: [1, 0], trbl: 'N%8R', val: '+/-'},
   '%': {grid: [0, 1], globalGrid: [2, 0], trbl: '%/9N'},
 };
 
-var selected = DEFAULT_SELECTION_NUMBERS;
-var prevSelected = DEFAULT_SELECTION_NUMBERS;
-var prevNumber  = null;
-var currNumber = null;
-var operator = null;
-var results = null;
-var isDecimal = false;
-var hasPressedEquals = false;
+let selected = DEFAULT_SELECTION_NUMBERS;
+let prevSelected = DEFAULT_SELECTION_NUMBERS;
+let prevNumber  = null;
+let currNumber = null;
+let operator = null;
+let results = null;
+let isDecimal = false;
+let hasPressedEquals = false;
 
-function prepareScreen(screen, grid, defaultColor) {
-  for (var k in screen) {
+let prepareScreen = function(screen, grid, defaultColor) {
+  for (let k in screen) {
     if (screen.hasOwnProperty(k)) {
       screen[k].color = screen[k].color || defaultColor;
-      var position = [];
-      var xGrid = (KEY_AREA[2]-KEY_AREA[0])/grid[0];
-      var yGrid = (KEY_AREA[3]-KEY_AREA[1])/grid[1];
+      let position = [];
+      let xGrid = (KEY_AREA[2]-KEY_AREA[0])/grid[0];
+      let yGrid = (KEY_AREA[3]-KEY_AREA[1])/grid[1];
       if (swipeEnabled) {
         position[0] = KEY_AREA[0]+xGrid*screen[k].grid[0];
         position[1] = KEY_AREA[1]+yGrid*screen[k].grid[1];
@@ -85,12 +91,12 @@ function prepareScreen(screen, grid, defaultColor) {
       screen[k].xy = position;
     }
   }
-}
+};
 
-function drawKey(name, k, selected) {
-  var rMargin = 0;
-  var bMargin = 0;
-  var color = k.color || COLORS.DEFAULT;
+let drawKey = function(name, k, selected) {
+  let rMargin = 0;
+  let bMargin = 0;
+  let color = k.color || COLORS.DEFAULT;
   g.setColor(color[selected ? 1 : 0]);
   g.setFont('Vector', 20).setFontAlign(0,0);
   g.fillRect(k.xy[0], k.xy[1], k.xy[2], k.xy[3]);
@@ -111,81 +117,81 @@ function drawKey(name, k, selected) {
     rMargin = -3;
   }
   g.drawString(k.val || name, (k.xy[0] + k.xy[2])/2, (k.xy[1] + k.xy[3])/2);
-}
+};
 
-function drawKeys() {
+let drawKeys = function() {
   g.setColor(screenColor[0]);
   g.fillRect(KEY_AREA[0], KEY_AREA[1], KEY_AREA[2], KEY_AREA[3]);
-  for (var k in screen) {
+  for (let k in screen) {
     if (screen.hasOwnProperty(k)) {
       drawKey(k, screen[k], k == selected);
     }
   }
-}
-function drawGlobal() {
+};
+let drawGlobal = function() {
   screen = {};
   screenColor = COLORS.DEFAULT;
   prepareScreen(numbers, globalGrid, COLORS.DEFAULT);
-  for (var k in numbers) {
+  for (let k in numbers) {
     screen[k] = numbers[k];
   }
   prepareScreen(operators, globalGrid, COLORS.OPERATOR);
-  for (var k in operators) {
+  for (let k in operators) {
     screen[k] = operators[k];
   }
   prepareScreen(specials, globalGrid, COLORS.SPECIAL);
-  for (var k in specials) {
+  for (let k in specials) {
     screen[k] = specials[k];
   }
   drawKeys();
-  var selected = DEFAULT_SELECTION_NUMBERS;
-  var prevSelected = DEFAULT_SELECTION_NUMBERS;
-}
-function drawNumbers() {
+  let selected = DEFAULT_SELECTION_NUMBERS;
+  let prevSelected = DEFAULT_SELECTION_NUMBERS;
+};
+let drawNumbers = function() {
   screen = numbers;
   screenColor = COLORS.DEFAULT;
   drawKeys();
-  var selected = DEFAULT_SELECTION_NUMBERS;
-  var prevSelected = DEFAULT_SELECTION_NUMBERS;
-}
-function drawOperators() {
+  let selected = DEFAULT_SELECTION_NUMBERS;
+  let prevSelected = DEFAULT_SELECTION_NUMBERS;
+};
+let drawOperators = function() {
   screen = operators;
   screenColor =COLORS.OPERATOR;
   drawKeys();
-  var selected = DEFAULT_SELECTION_OPERATORS;
-  var prevSelected = DEFAULT_SELECTION_OPERATORS;
-}
-function drawSpecials() {
+  let selected = DEFAULT_SELECTION_OPERATORS;
+  let prevSelected = DEFAULT_SELECTION_OPERATORS;
+};
+let drawSpecials = function() {
   screen = specials;
   screenColor = COLORS.SPECIAL;
   drawKeys();
-  var selected = DEFAULT_SELECTION_SPECIALS;
-  var prevSelected = DEFAULT_SELECTION_SPECIALS;
-}
+  let selected = DEFAULT_SELECTION_SPECIALS;
+  let prevSelected = DEFAULT_SELECTION_SPECIALS;
+};
 
-function getIntWithPrecision(x) {
-  var xStr = x.toString();
-  var xRadix = xStr.indexOf('.');
-  var xPrecision = xRadix === -1 ? 0 : xStr.length - xRadix - 1;
+let getIntWithPrecision = function(x) {
+  let xStr = x.toString();
+  let xRadix = xStr.indexOf('.');
+  let xPrecision = xRadix === -1 ? 0 : xStr.length - xRadix - 1;
   return {
     num: Number(xStr.replace('.', '')),
     p: xPrecision
   };
-}
+};
 
-function multiply(x, y) {
-  var xNum = getIntWithPrecision(x);
-  var yNum = getIntWithPrecision(y);
+let multiply = function(x, y) {
+  let xNum = getIntWithPrecision(x);
+  let yNum = getIntWithPrecision(y);
   return xNum.num * yNum.num / Math.pow(10, xNum.p + yNum.p);
-}
+};
 
-function divide(x, y) {
-  var xNum = getIntWithPrecision(x);
-  var yNum = getIntWithPrecision(y);
+let divide = function(x, y) {
+  let xNum = getIntWithPrecision(x);
+  let yNum = getIntWithPrecision(y);
   return xNum.num / yNum.num / Math.pow(10, xNum.p - yNum.p);
-}
+};
 
-function sum(x, y) {
+let sum = function(x, y) {
   let xNum = getIntWithPrecision(x);
   let yNum = getIntWithPrecision(y);
 
@@ -198,13 +204,13 @@ function sum(x, y) {
     }
   }
   return (xNum.num + yNum.num) / Math.pow(10, Math.max(xNum.p, yNum.p));
-}
+};
 
-function subtract(x, y) {
+let subtract = function(x, y) {
   return sum(x, -y);
-}
+};
 
-function doMath(x, y, operator) {
+let doMath = function(x, y, operator) {
   switch (operator) {
     case '/':
       return divide(x, y);
@@ -215,11 +221,11 @@ function doMath(x, y, operator) {
     case '-':
       return subtract(x, y);
   }
-}
+};
 
-function displayOutput(num) {
-  var len;
-  var minusMarge = 0;
+let displayOutput = function(num) {
+  let len;
+  let minusMarge = 0;
   g.setBgColor(0).clearRect(0, 0, g.getWidth(), RESULT_HEIGHT-1);
   g.setColor(-1);
   if (num === Infinity || num === -Infinity || isNaN(num)) {
@@ -244,7 +250,7 @@ function displayOutput(num) {
     g.setFont('Vector', 22);
   } else {
     // might not be a number due to display of dot "."
-    var numNumeric = Number(num);
+    let numNumeric = Number(num);
 
     if (typeof num === 'string') {
       if (num.indexOf('.') !== -1) {
@@ -268,10 +274,10 @@ function displayOutput(num) {
     g.setFont('Vector', 22).setFontAlign(1,0);
     g.drawString(operator, g.getWidth()-1, RESULT_HEIGHT/2);
   }
-}
-var wasPressedEquals = false;
-var hasPressedNumber = false;
-function calculatorLogic(x) {
+};
+let wasPressedEquals = false;
+let hasPressedNumber = false;
+let calculatorLogic = function(x) {
   if (wasPressedEquals && hasPressedNumber !== false) {
     prevNumber = null;
     currNumber = hasPressedNumber;
@@ -311,9 +317,9 @@ function calculatorLogic(x) {
   } else if (prevNumber == null && currNumber == null && operator == null) {
     displayOutput(0);
   }
-}
+};
 
-function buttonPress(val) {
+let buttonPress = function(val) {
   switch (val) {
     case 'R':
       currNumber = null;
@@ -386,23 +392,34 @@ function buttonPress(val) {
       displayOutput(currNumber);
       break;
   }
-}
+};
 
-function moveDirection(d) {
+let moveDirection = function(d) {
   drawKey(selected, screen[selected]);
   prevSelected = selected;
   selected = (d === 0 && selected == '0' && prevSelected === '1') ? '1' : screen[selected].trbl[d];
   drawKey(selected, screen[selected], true);
-}
+};
 
 if (process.env.HWVERSION==1) {
-  setWatch(_ => moveDirection(0), BTN1, {repeat: true, debounce: 100});
-  setWatch(_ => moveDirection(2), BTN3, {repeat: true, debounce: 100});
-  setWatch(_ => moveDirection(3), BTN4, {repeat: true, debounce: 100});
-  setWatch(_ => moveDirection(1), BTN5, {repeat: true, debounce: 100});
-  setWatch(_ => buttonPress(selected), BTN2, {repeat: true, debounce: 100});
+  W1 = setWatch(_ => moveDirection(0), BTN1, {repeat: true, debounce: 100});
+  W2 = setWatch(_ => moveDirection(2), BTN3, {repeat: true, debounce: 100});
+  W3 = setWatch(_ => moveDirection(3), BTN4, {repeat: true, debounce: 100});
+  W4 = setWatch(_ => moveDirection(1), BTN5, {repeat: true, debounce: 100});
+  W5 = setWatch(_ => buttonPress(selected), BTN2, {repeat: true, debounce: 100});
   swipeEnabled = false;
   drawGlobal();
+
+  /*
+  let removeUI = ()=> {
+    wu.show();
+    clearWatch(W1);
+    clearWatch(W2);
+    clearWatch(W3);
+    clearWatch(W4);
+    clearWatch(W5);
+    */
+  };
 } else { // touchscreen?
     selected = "NONE";
   swipeEnabled = true;
@@ -411,20 +428,18 @@ if (process.env.HWVERSION==1) {
   prepareScreen(specials, specialsGrid, COLORS.SPECIAL);
   drawNumbers();
 
-  Bangle.setUI({ 
-    mode : 'custom',
-    back : load, // Clicking physical button or pressing upper left corner turns off (where red back button would be)
-    touch : (n,e)=>{
-      for (var key in screen) {
+  let touchHandler = (n,e)=>{
+      for (let key in screen) {
         if (typeof screen[key] == "undefined") break;
-        var r = screen[key].xy;
+        let r = screen[key].xy;
         if (e.x>=r[0] && e.y>=r[1] && e.x<r[2] && e.y<r[3]) {
           //print("Press "+key);
           buttonPress(""+key);
         }
       }
-    },
-    swipe : (LR, UD) => {
+    };
+
+  let swipeHandler = (LR, UD) => {
       if (LR == 1) { // right
         drawSpecials();
       }
@@ -437,9 +452,27 @@ if (process.env.HWVERSION==1) {
       if (UD == -1) { // up
         drawNumbers();
       }
-    }
+    };
+
+  let wu = require("widget_utils");
+
+  let removeUI = ()=> {
+    delete Graphics.prototype.setFont7x11Numeric7Seg;
+    wu.show();
+  };
+
+  Bangle.setUI({ 
+    mode : 'custom',
+    back : load, // Clicking physical button or pressing upper left corner turns off (where red back button would be)
+    touch : touchHandler,
+    swipe : swipeHandler,
+    //remove: removeUI // Uncomment to enable fastloading on exit.
   });
 
-}
 
+  Bangle.loadWidgets();
+  wu.hide();
+
+}
 displayOutput(0);
+}
