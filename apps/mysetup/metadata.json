@@ -6,7 +6,7 @@
   "type": "settings",
   "tags": "system",
   "supports" : ["BANGLEJS2"],  
-  "dependencies" : {"notify":"app","health":"app","clock_info":"app","widminbat":"app","podadrem":"app","spotrem":"app","messages":"app","android":"app","lightswitch":"app","widanclk":"app","backswipe":"app","widmsggrid":"app","torch":"app","calculator":"app","agenda":"app","smpltmr":"app","sleeplog":"app","kbmulti":"app","widram":"app","widbthide":"app","clkinfostopw":"app","messageicons":"app","recorder":"app","widalarm":"app","bwclklite":"app","powermanager":"app","boot":"app","setting":"app","runplus":"app","sched":"app","dtlaunch":"app","agpsdata":"app","messagesmusic":"app","messagegui":"app","alarm":"app","quicklaunch":"app","swscroll":"app","longpressbuzz":"app","fastload":"app","hrmmar":"app"},
+  "dependencies" : {"kbmulti":"app","notify":"app","health":"app","clock_info":"app","widminbat":"app","podadrem":"app","spotrem":"app","messageicons":"app","messagegui":"app","messages":"app","android":"app","lightswitch":"app","widanclk":"app","backswipe":"app","widmsggrid":"app","torch":"app","calculator":"app","agenda":"app","smpltmr":"app","sleeplog":"app","widram":"app","widbthide":"app","clkinfostopw":"app","recorder":"app","widalarm":"app","bwclklite":"app","powermanager":"app","boot":"app","setting":"app","runplus":"app","sched":"app","dtlaunch":"app","agpsdata":"app","messagesmusic":"app","alarm":"app","quicklaunch":"app","swscroll":"app","fastload":"app","hrmmar":"app"},
   "readme": "README.md",
   "storage": [
     {"name":"mysetup.settings.js","url":"settings.js"}
