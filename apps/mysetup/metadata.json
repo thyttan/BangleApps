@@ -49,8 +49,6 @@
   },
   "readme": "README.md",
   "storage": [
-    {"name":"mysetup.settings.js",
-     "url":"settings.js"},
     {"name":"backswipe.json",
      "url":"backswipe.json"},
     {"name":"dtlaunch.json",
