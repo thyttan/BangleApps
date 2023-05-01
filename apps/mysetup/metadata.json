@@ -60,6 +60,8 @@
     {"name":"lightswitch.json",
      "url":"lightswitch.json"},
     {"name":"quicklaunch.json",
-     "url":"quicklaunch.json"}
+     "url":"quicklaunch.json"},
+    {"name":"setting.json",
+     "url":"setting.json"}
   ]
 }
