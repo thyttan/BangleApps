@@ -303,8 +303,8 @@
   });
   // Music control
   Bangle.musicControl = cmd => {
-    // play/pause/next/previous/volumeup/volumedown
-    gbSend({ t: "music", n:cmd });
+    // play/pause/next/previous/volumeup/volumedown/volumesetlevel
+    if (typeof cmd !== "object") {gbSend({ t: "music", n:cmd });} else {gbSend({ t: "music", n:cmd.cmd, extra:cmd.extra });}
   };
   // Message response
   Bangle.messageResponse = (msg,response) => {
