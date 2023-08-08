@@ -112,14 +112,14 @@ let setUI = function() {
     },
       ud => {
         //if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
-        
+
         if (ud) {
 
         let callback = (mode, fb)=>{
           if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
           if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
         };
-        require("SliderInput").interface(callback, true, true);
+        require("SliderInput").interface(callback, {useMap:true, oversizeL:0.25});
         }
       }
   );
