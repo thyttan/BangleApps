@@ -55,6 +55,9 @@
       "musicinfo" : function() {
         require("messages").pushMessage(Object.assign(event, {t:"modify",id:"music",title:"Music"}));
       },
+      "audio" : ()=>{
+        Bangle.emit('audio', event.level);
+      },
       // {"t":"call","cmd":"incoming/end","name":"Bob","number":"12421312"})
       "call" : function() {
         Object.assign(event, {
@@ -298,7 +301,7 @@
   });
   // Music control
   Bangle.musicControl = cmd => {
-    // play/pause/next/previous/volumeup/volumedown/volumesetlevel
+    // play/pause/next/previous/volumeup/volumedown/volumegetlevel/volumesetlevel
     if (typeof cmd !== "object") {gbSend({ t: "music", n:cmd });} else {gbSend({ t: "music", n:cmd.cmd, extra:cmd.extra });}
   };
   // Message response
