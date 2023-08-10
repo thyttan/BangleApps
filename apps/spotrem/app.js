@@ -98,6 +98,11 @@ let swipeHandler = function(LR, _) {
   }
 };
 
+let audioLevels;
+let audioHandler = (e)=>{audioLevels = e; print(audioLevels);};
+Bangle.on('audio', audioHandler);
+Bangle.musicControl("volumegetlevel");
+
 // Navigation input on the main layout
 let setUI = function() {
 // Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
@@ -118,8 +123,9 @@ let setUI = function() {
         let callback = (mode, fb)=>{
           if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
           if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
+          if (mode =="remove") {audioLevels.c = fb; print(audioLevels.c);}
         };
-        require("SliderInput").interface(callback, {useMap:true, oversizeL:0.25});
+        require("SliderInput").interface(callback, {useMap:true, oversizeL:0.25, steps:audioLevels.u, currLevel:audioLevels.c});
         }
       }
   );
