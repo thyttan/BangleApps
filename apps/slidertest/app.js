@@ -7,12 +7,12 @@ let callback = (mode,fb)=>{
 
 g.reset().clear().setColor(1,0,0).fillRect(0,0,176,176);
 
-let audioLevels;
+let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
 let audioHandler = (e)=>{audioLevels = e;};
 Bangle.on('audio', audioHandler);
 Bangle.musicControl("volumegetlevel");
 
-let ebLast = 0;
+let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
   Bangle.musicControl("volumegetlevel");
