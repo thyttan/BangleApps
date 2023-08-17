@@ -98,7 +98,7 @@ let swipeHandler = function(LR, _) {
   }
 };
 
-let audioLevels;
+let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
 let audioHandler = (e)=>{audioLevels = e; print(audioLevels);};
 Bangle.on('audio', audioHandler);
 Bangle.musicControl("volumegetlevel");
