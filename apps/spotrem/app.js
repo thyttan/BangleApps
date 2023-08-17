@@ -119,13 +119,12 @@ let setUI = function() {
         //if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
 
         if (ud) {
-
-        let callback = (mode, fb)=>{
-          if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
-          if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
-          if (mode =="remove") {audioLevels.c = fb; print(audioLevels.c);}
-        };
-        require("SliderInput").interface(callback, {useMap:true, oversizeL:0.25, steps:audioLevels.u, currLevel:audioLevels.c});
+          let callback = (mode, fb)=>{
+            if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
+            if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
+            if (mode =="remove") {audioLevels.c = fb; print(audioLevels.c);}
+          };
+          require("SliderInput").interface(callback, {useMap:true, oversizeL:0.25, steps:audioLevels.u, currLevel:audioLevels.c});
         }
       }
   );
