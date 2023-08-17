@@ -16,7 +16,7 @@ let ebLast = 0; // Used for fix/Hack needed because there is a timeout before th
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
   Bangle.musicControl("volumegetlevel");
-  setTimeout(()=>{require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c});},200);
+  setTimeout(()=>{require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:true});},200);
   }
   ebLast = e.b;
 }
