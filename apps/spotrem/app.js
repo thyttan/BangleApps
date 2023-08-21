@@ -103,37 +103,35 @@ let audioHandler = (e)=>{audioLevels = e; print(audioLevels);};
 Bangle.on('audio', audioHandler);
 Bangle.musicControl("volumegetlevel");
 
-let tempMask = ()=>{E.stopEventPropagation&&E.stopEventPropagation(); setTimeout(()=>{Bangle.removeListener('drag',tempMask);}, 150);}; // FIXME: Temporary fix/hack before redoing input to not rely on setUI's "updown" mode.
-
 // Navigation input on the main layout
 let setUI = function() {
 // Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
-  Bangle.setUI(
-    {mode : "updown",
-      remove : ()=>{
-        Bangle.removeListener("touch", touchHandler);
-        Bangle.removeListener("swipe", swipeHandler);
-        clearWatch(buttonHandler);
-        widgetUtils.show();
-      }
-    },
-      ud => {
-        //if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
 
-        if (ud) {
-          Bangle.prependListener('drag', tempMask);
-
-          let callback = (mode, fb)=>{
-            if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
-            if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
-            if (mode =="remove") {audioLevels.c = fb; print(audioLevels.c);}
-          };
-          setTimeout(()=>{require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c});},200);
+  let callback = (mode, fb)=>{
+    if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
+    if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
+    if (mode =="remove") {audioLevels.c = fb; ebLast = 0; backToGfx();}
+  };
+  
+  let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
+  Bangle.setUI({
+    mode : "custom",
+    touch : touchHandler,
+    swipe : swipeHandler,
+    drag : (e)=>{
+      if (ebLast==0) {
+        Bangle.musicControl("volumegetlevel");
+        setTimeout(()=>{require("SliderInput").interface(callback, {timeout:0.0001, useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false});},200);
         }
-      }
-  );
-  Bangle.on("touch", touchHandler);
-  Bangle.on("swipe", swipeHandler);
+        ebLast = e.b;
+    },
+    remove : ()=>{
+      Bangle.removeListener("touch", touchHandler);
+      Bangle.removeListener("swipe", swipeHandler);
+      clearWatch(buttonHandler);
+      widgetUtils.show();
+    }
+  });
   let buttonHandler = setWatch(()=>{load();}, BTN, {edge:'falling'});
 };
 
