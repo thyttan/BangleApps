@@ -18,16 +18,8 @@ Bangle.musicControl("volumegetlevel");
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
-    Bangle.musicControl("volumegetlevel");
-    if (e.y<40) {
-        setTimeout(()=>{require("SliderInput").interfaceBoth(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:true, oversizeL:0, oversizeR:0, xStart:20});},200);
-      } else if (e.y>140) {
-        setTimeout(()=>{require("SliderInput").interfaceHor(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:true, oversizeL:0, oversizeR:0});},200);
-      } else if (e.x<90) {
-        setTimeout(()=>{require("SliderInput").interfaceBoth(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, oversizeL:0, oversizeR:0, xStart:20});},200);
-      } else {
-        setTimeout(()=>{require("SliderInput").interfaceVert(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, oversizeL:0, oversizeR:0});},200);
-      }
+  Bangle.musicControl("volumegetlevel");
+  setTimeout(()=>{require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false});},200);
   }
   ebLast = e.b;
 }
