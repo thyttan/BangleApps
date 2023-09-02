@@ -2,11 +2,18 @@
 let callback = (mode,fb)=>{
   if (mode =="map") Bangle.musicControl({cmd:"volumesetlevel",extra:Math.round(100*fb/30)});
   if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
-  if (mode =="remove") {audioLevels.c = fb; ebLast = 0; draw();}
+  if (mode =="remove") {
+    audioLevels.c = fb; ebLast = 0; draw();
+    sliderObject2.f.draw(sliderObject2.v.level);
+    print(process.memory().usage);
+    print("#drag handlers: " + Bangle["#ondrag"].length)
+  }
 };
-  
+
 let callback2 = (mode,fb)=>{
   currentLevel = fb;
+  print(process.memory().usage);
+  print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
   let currentLevel = 10;
@@ -17,11 +24,13 @@ let draw = ()=>{
   g.reset().clear().setColor(1,0,0).fillRect(0,0,176,176);
 };
 
+let sliderObject2;
 let init = ()=> {
   draw();
-  require("SliderInput").interface(callback2, {useMap:true, steps:30, currLevel:currentLevel, horizontal:true, rounded:false, timeout:false, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(Bangle.appRect.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true});
+  sliderObject2 = require("SliderInput").interface(callback2, {useMap:true, steps:30, currLevel:currentLevel, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(Bangle.appRect.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true});
+  sliderObject2.f.draw(sliderObject2.v.level);
+  sliderObject2.f.startAutoUpdate();
 }
-
 
 let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
 let audioHandler = (e)=>{audioLevels = e;};
@@ -31,14 +40,25 @@ Bangle.musicControl("volumegetlevel");
 init();
 
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
+let sliderObject=require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5});
+
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
   Bangle.musicControl("volumegetlevel");
   if (e.y<140) {
-    setTimeout(()=>{require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21});},200);
+    setTimeout(()=>{
+      sliderObject.c.steps=audioLevels.u;
+      sliderObject.v.level=audioLevels.c;
+    },200);
+    sliderObject.v.dy = 0;
+    Bangle.prependListener('drag', sliderObject.f.dragSlider);
+  }
+  if (e.y>=140) {
+    Bangle.prependListener('drag',sliderObject2.f.dragSlider);
   }
   }
   ebLast = e.b;
 }
 );
+print("#drag handlers: " + Bangle["#ondrag"].length)
 }
