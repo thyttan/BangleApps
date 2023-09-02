@@ -16,10 +16,10 @@ let callback2 = (mode,fb)=>{
   print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
-  let currentLevel = 10;
+let currentLevel = 10;
 
-  let R = Bangle.appRect;
-  
+let R = Bangle.appRect;
+
 let draw = ()=>{
   g.reset().clear().setColor(1,0,0).fillRect(0,0,176,176);
 };
@@ -40,22 +40,25 @@ Bangle.musicControl("volumegetlevel");
 init();
 
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
-let sliderObject=require("SliderInput").interface(callback, {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5});
+let sliderObject=require("SliderInput").interface(
+    callback, 
+    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5}
+  );
 
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
-  Bangle.musicControl("volumegetlevel");
-  if (e.y<140) {
-    setTimeout(()=>{
-      sliderObject.c.steps=audioLevels.u;
-      sliderObject.v.level=audioLevels.c;
-    },200);
-    sliderObject.v.dy = 0;
-    Bangle.prependListener('drag', sliderObject.f.dragSlider);
-  }
-  if (e.y>=140) {
-    Bangle.prependListener('drag',sliderObject2.f.dragSlider);
-  }
+    Bangle.musicControl("volumegetlevel");
+    if (e.y<140) {
+      setTimeout(()=>{
+        sliderObject.c.steps=audioLevels.u;
+        sliderObject.v.level=audioLevels.c;
+      },200);
+      sliderObject.v.dy = 0;
+      Bangle.prependListener('drag', sliderObject.f.dragSlider);
+    }
+    if (e.y>=140) {
+      Bangle.prependListener('drag',sliderObject2.f.dragSlider);
+    }
   }
   ebLast = e.b;
 }
