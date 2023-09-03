@@ -18,20 +18,19 @@ let callback2 = (mode,fb)=>{
   print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
-let R = Bangle.appRect;
-
 let draw = (rect)=>{
   g.reset();
   if (rect) g.setClipRect(rect.x1, rect.y1, rect.x2, rect.y2);
   g.setColor(1,0,0).fillRect(0,0,176,176);
   g.reset();
+  Bangle.drawWidgets();
 };
 
 let sliderObject2;
 let initSlider2 = ()=>{
   sliderObject2 = require("SliderInput").interface(
       callback2,
-      {useMap:true, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(Bangle.appRect.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true}
+      {useMap:true, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
     );
   sliderObject2.f.draw(sliderObject2.v.level);
   sliderObject2.f.startAutoUpdate();
@@ -65,6 +64,8 @@ let messageHandler = (type, msg)=>{
 }
 Bangle.on('message', messageHandler);
 
+Bangle.loadWidgets();
+let R = Bangle.appRect;
 init();
 
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
