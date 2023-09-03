@@ -18,8 +18,6 @@ let callback2 = (mode,fb)=>{
   print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
-let currentLevel = 10;
-
 let R = Bangle.appRect;
 
 let draw = (rect)=>{
@@ -30,20 +28,42 @@ let draw = (rect)=>{
 };
 
 let sliderObject2;
-let init = ()=> {
-  draw();
+let initSlider2 = ()=>{
   sliderObject2 = require("SliderInput").interface(
       callback2,
-      {useMap:true, steps:30, currLevel:currentLevel, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(Bangle.appRect.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true}
+      {useMap:true, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(Bangle.appRect.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true}
     );
   sliderObject2.f.draw(sliderObject2.v.level);
   sliderObject2.f.startAutoUpdate();
+  }
+
+let init = ()=> {
+  draw();
+  initSlider2();
 }
 
 let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
 let audioHandler = (e)=>{audioLevels = e;};
 Bangle.on('audio', audioHandler);
 Bangle.musicControl("volumegetlevel");
+
+// Bangle.emit("message", type, msg);
+let trackPosition = 0;
+let trackDur = 30;
+let messageHandler = (type, msg)=>{
+  print(type, msg);
+  if (type=='music'){
+    trackPosition = 1; // should depend on msg.position or similar.
+    trackDur = msg.dur;
+    print('trackPosition: ' + trackPosition)
+    if (sliderObject2) {
+        sliderObject2.f.stopAutoUpdate();
+        sliderObject2.f.remove();
+        initSlider2();
+      }
+  }
+}
+Bangle.on('message', messageHandler);
 
 init();
 
