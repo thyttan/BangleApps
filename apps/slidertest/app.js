@@ -33,7 +33,7 @@ let initSlider2 = ()=>{
       {useMap:true, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
     );
   sliderObject2.f.draw(sliderObject2.v.level);
-  sliderObject2.f.startAutoUpdate();
+  if (trackState==="play") sliderObject2.f.startAutoUpdate();
   }
 
 let init = ()=> {
@@ -49,10 +49,12 @@ Bangle.musicControl("volumegetlevel");
 // Bangle.emit("message", type, msg);
 let trackPosition = 0;
 let trackDur = 30;
+let trackState = "play";
 let messageHandler = (type, msg)=>{
   print(type, msg);
-  if (type=='music'){
-    trackPosition = msg.position+1; // +1 to account for latency.
+  if (type==='music'){
+    trackState = msg.state;
+    trackPosition = msg.position+trackState==="play"?1:0; // +1 to account for latency.
     trackDur = msg.dur;
     print('trackPosition: ' + trackPosition)
     if (sliderObject2) {
