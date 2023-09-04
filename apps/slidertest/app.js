@@ -5,8 +5,8 @@ let callback = (mode,fb)=>{
   if (mode =="remove") {
     audioLevels.c = fb;
     ebLast = 0;
-    draw();
-    sliderObject2.f.draw(sliderObject2.v.level);
+    draw(sliderObject.c.r);
+    //sliderObject2.f.draw(sliderObject2.v.level);
     print(process.memory().usage);
     print("#drag handlers: " + Bangle["#ondrag"].length)
   }
@@ -22,8 +22,11 @@ let currentLevel = 10;
 
 let R = Bangle.appRect;
 
-let draw = ()=>{
-  g.reset().clear().setColor(1,0,0).fillRect(0,0,176,176);
+let draw = (rect)=>{
+  g.reset();
+  if (rect) g.setClipRect(rect.x1, rect.y1, rect.x2, rect.y2);
+  g.setColor(1,0,0).fillRect(0,0,176,176);
+  g.reset();
 };
 
 let sliderObject2;
