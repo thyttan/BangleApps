@@ -52,7 +52,7 @@ let trackDur = 30;
 let messageHandler = (type, msg)=>{
   print(type, msg);
   if (type=='music'){
-    trackPosition = 1; // should depend on msg.position or similar.
+    trackPosition = msg.position+1; // +1 to account for latency.
     trackDur = msg.dur;
     print('trackPosition: ' + trackPosition)
     if (sliderObject2) {
