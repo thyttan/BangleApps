@@ -49,7 +49,7 @@
       },
       // {t:"musicstate", state:"play/pause",position,shuffle,repeat}
       "musicstate" : function() {
-        require("messages").pushMessage({t:"modify",id:"music",title:"Music",state:event.state});
+        require("messages").pushMessage({t:"modify",id:"music",title:"Music",state:event.state,position:event.position});
       },
       // {t:"musicinfo", artist,album,track,dur,c(track count),n(track num}
       "musicinfo" : function() {
