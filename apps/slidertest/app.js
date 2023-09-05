@@ -52,7 +52,7 @@ let trackDur = 30;
 let trackState = "play";
 let messageHandler = (type, msg)=>{
   print(type, msg);
-  if (type==='music'){
+  if (type==='music' && msg.src=="musicstate") {
     trackState = msg.state;
     trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
     trackDur = msg.dur;
