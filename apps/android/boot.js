@@ -49,11 +49,11 @@
       },
       // {t:"musicstate", state:"play/pause",position,shuffle,repeat}
       "musicstate" : function() {
-        require("messages").pushMessage({t:"modify",id:"music",title:"Music",state:event.state,position:event.position});
+        require("messages").pushMessage({t:"modify",id:"music",title:"Music",state:event.state,position:event.position,src:event.t});
       },
       // {t:"musicinfo", artist,album,track,dur,c(track count),n(track num}
       "musicinfo" : function() {
-        require("messages").pushMessage(Object.assign(event, {t:"modify",id:"music",title:"Music"}));
+        require("messages").pushMessage(Object.assign(event, {t:"modify",id:"music",title:"Music",src:event.t}));
       },
       "audio" : ()=>{
         Bangle.emit('audio', event.level);

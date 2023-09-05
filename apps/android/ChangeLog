@@ -33,3 +33,5 @@
 0.31: Implement API for activity fetching
 0.32: Set android media volume by supplying a percentage.
       Forward `musicstate` position information.
+      Keep track of if music massage event was triggerd my `musicinfo` or
+			`musicstate`.
