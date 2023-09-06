@@ -48,12 +48,12 @@
           Bangle.findDeviceInterval = setInterval(_=>Bangle.buzz(),1000);
       },
       // {t:"musicstate", state:"play/pause",position,shuffle,repeat}
-      "musicstate" : function() {
-        require("messages").pushMessage({t:"modify",id:"music",title:"Music",state:event.state,position:event.position,src:event.t});
+      "musicstate" : function() { print("android/boot/musicstate");
+        require("messages").pushMessage({t:"modify",id:"music",title:"Music",state:event.state,position:event.position,src:"musicstate"});
       },
       // {t:"musicinfo", artist,album,track,dur,c(track count),n(track num}
-      "musicinfo" : function() {
-        require("messages").pushMessage(Object.assign(event, {t:"modify",id:"music",title:"Music",src:event.t}));
+      "musicinfo" : function() { print("android/boot/musicinfo");
+        require("messages").pushMessage(Object.assign(event, {t:"modify",id:"music",title:"Music",src:"musicinfo"}));
       },
       "audio" : ()=>{
         Bangle.emit('audio', event.level);
