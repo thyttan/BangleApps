@@ -1,4 +1,6 @@
 {
+Bangle.setLCDTimeout(0) // Easier to read the screen while developing.
+
 let callback = (mode,fb)=>{
   if (mode =="map") Bangle.musicControl({cmd:"volumesetlevel",extra:Math.round(100*fb/30)});
   if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
@@ -14,8 +16,8 @@ let callback = (mode,fb)=>{
 
 let callback2 = (mode,fb)=>{
   currentLevel = fb;
-  print(process.memory().usage);
-  print("#drag handlers: " + Bangle["#ondrag"].length)
+  //print(process.memory().usage);
+  //print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
 let draw = (rect)=>{
@@ -24,6 +26,11 @@ let draw = (rect)=>{
   g.setColor(1,0,0).fillRect(0,0,176,176);
   g.reset();
   Bangle.drawWidgets();
+};
+
+let blink = ()=>{setTimeout(()=>{
+g.reset().setColor(0,1,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);
+setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);},100);},0);
 };
 
 let sliderObject2;
@@ -51,17 +58,17 @@ let trackPosition = 0;
 let trackDur = 30;
 let trackState = "play";
 let messageHandler = (type, msg)=>{
-  print(type, msg);
+  print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
   if (type==='music' && msg.src=="musicstate") {
     trackState = msg.state;
     trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
     trackDur = msg.dur;
-    print('trackPosition: ' + trackPosition)
     if (sliderObject2) {
         sliderObject2.f.stopAutoUpdate();
         sliderObject2.f.remove();
         initSlider2();
       }
+    blink() // Indicate when a message arrives.
   }
 }
 Bangle.on('message', messageHandler);
@@ -94,5 +101,5 @@ Bangle.on('drag', (e)=>{
   ebLast = e.b;
 }
 );
-print("#drag handlers: " + Bangle["#ondrag"].length)
+//print("#drag handlers: " + Bangle["#ondrag"].length)
 }
