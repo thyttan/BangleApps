@@ -16,6 +16,7 @@ let callback = (mode,fb)=>{
 
 let callback2 = (mode,fb)=>{
   currentLevel = fb;
+  if (mode =="map") Bangle.musicControl({cmd:"seek",extra:fb});
   //print(process.memory().usage);
   //print("#drag handlers: " + Bangle["#ondrag"].length)
 };
