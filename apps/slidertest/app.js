@@ -38,7 +38,7 @@ let sliderObject2;
 let initSlider2 = ()=>{
   sliderObject2 = require("SliderInput").interface(
       callback2,
-      {useMap:true, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
+      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
     );
   sliderObject2.f.draw(sliderObject2.v.level);
   if (trackState==="play") sliderObject2.f.startAutoUpdate();
@@ -57,7 +57,7 @@ Bangle.musicControl("volumegetlevel");
 // Bangle.emit("message", type, msg);
 let trackPosition = 0;
 let trackDur = 30;
-let trackState = "play";
+let trackState = "pause";
 let messageHandler = (type, msg)=>{
   print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
   if (type==='music' && msg.src=="musicstate") {
