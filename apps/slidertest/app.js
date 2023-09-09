@@ -4,7 +4,7 @@ Bangle.setLCDTimeout(0) // Easier to read the screen while developing.
 // Callbacks for use with the sliders
 
 let callback = (mode,fb)=>{
-  if (mode =="map") Bangle.musicControl({cmd:"volumesetlevel",extra:Math.round(100*fb/30)});
+  if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
   if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
   if (mode =="remove") {
     audioLevels.c = fb;
@@ -59,9 +59,9 @@ let init = ()=> {
 }
 
 let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
-let audioHandler = (e)=>{audioLevels = e;};
+let audioHandler = (e)=>{audioLevels = e;print(audioLevels);};
 Bangle.on('audio', audioHandler);
-Bangle.musicControl("volumegetlevel");
+Bangle.musicControl("vg"); // vg = Volume Get level
 
 // Bangle.emit("message", type, msg);
 let trackPosition = 0;
@@ -91,7 +91,7 @@ let sliderObject=require("SliderInput").interface(
 
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
-    Bangle.musicControl("volumegetlevel");
+    Bangle.musicControl("vg"); // vg = Volume Get level
     if (e.y<140 && !sliderObject.v.dragActive) {
       setTimeout(()=>{
         sliderObject.c.steps=audioLevels.u;
