@@ -44,7 +44,7 @@ let callback2 = (mode,fb)=>{
 };
 
 // SliderObject controls volume level on the android device.
-let sliderObject=require("SliderInput").interface(
+let sliderObject=require("Slider").create(
     callback,
     {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
   );
@@ -52,7 +52,7 @@ let sliderObject=require("SliderInput").interface(
 // SliderObject2 follows the media track playing on the android device.
 let sliderObject2;
 let initSlider2 = ()=>{
-  sliderObject2 = require("SliderInput").interface(
+  sliderObject2 = require("Slider").create(
       callback2,
       {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
     );
