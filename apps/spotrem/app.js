@@ -7,7 +7,7 @@ let R;
 let widgetUtils = require("widget_utils");
 let backToMenu = false;
 let isPaused = true;
-let dark = g.theme.dark; // bool
+let colorFG = g.theme.dark?0x07E0:0x03E0; // Green on dark theme, DarkGreen on light theme.
 
 // The main layout of the app
 let gfx = function() {
@@ -18,7 +18,7 @@ let gfx = function() {
   g.clearRect(R);
   g.reset();
 
-  if (dark) {g.setColor(0x07E0);} else {g.setColor(0x03E0);} // Green on dark theme, DarkGreen on light theme.
+  g.setColor(colorFG) 
   g.setFont("4x6:2");
   g.setFontAlign(1, 0, 0);
   g.drawString("->", R.x2 - marigin, R.y + R.h/2);
@@ -46,6 +46,7 @@ let gfx = function() {
 
   g.setFontAlign(1, 1, 0);
   g.drawString("Saved", R.x + R.w - 2*marigin, R.y + R.h - 2*marigin);
+
 };
 
 // Touch handler for main layout
@@ -99,31 +100,90 @@ let swipeHandler = function(LR, _) {
 };
 
 let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
-let audioHandler = (e)=>{audioLevels = e; print(audioLevels);};
+let audioHandler = (e)=>{audioLevels = e;};
 Bangle.on('audio', audioHandler);
-Bangle.musicControl("volumegetlevel");
+Bangle.musicControl("vg");
 
 // Navigation input on the main layout
 let setUI = function() {
 // Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
 
-  let callback = (mode, fb)=>{
-    if (mode == "map") Bangle.musicControl({cmd:"volumesetlevel", extra:Math.round(100*fb/30)});
-    if (mode == "incr") Bangle.musicControl(fb>0 ? "volumedown" : "volumeup");
-    if (mode =="remove") {audioLevels.c = fb; ebLast = 0; backToGfx();}
-  };
+// cbVolumeSlider is used with volumeSlider
+let cbVolumeSlider = (mode,fb)=>{
+  if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
+  if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
+  if (mode =="remove") {
+    audioLevels.c = fb;
+    ebLast = 0;
+    gfx();
+    progressBar.f.draw(progressBar.v.level);
+  }
+};
+
+// cbProgressbar is used with progressBar
+let cbProgressbar = (mode,fb)=>{
+  if (mode == "auto" && volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
+};
+
+// volumeSlider controls volume level on the android device.
+let volumeSlider=require("Slider").create(
+    cbVolumeSlider,
+    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true, colorFG:colorFG}
+  );
   
+// Handle music messages
+// Bangle.emit("message", type, msg);
+let trackPosition = 0;
+let trackDur = 30;
+let trackState = "pause";
+let messageHandler = (type, msg)=>{
+  print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
+  if (type==='music' && msg.src=="musicstate") {
+    trackState = msg.state;
+    trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
+    trackDur = msg.dur;
+    if (progressBar) {
+        progressBar.f.stopAutoUpdate();
+        progressBar.f.remove();
+        initProgressBar();
+      }
+  }
+}
+Bangle.on('message', messageHandler);
+
+// progressBar follows the media track playing on the android device.
+let progressBar;
+let initProgressBar = ()=>{
+  progressBar = require("Slider").create(
+      cbProgressbar,
+      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:8, xStart:R.x2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8,colorFG:colorFG}
+    );
+  progressBar.f.draw(progressBar.v.level);
+  if (trackState==="play") progressBar.f.startAutoUpdate();
+  }
+  initProgressBar();
+
   let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
   Bangle.setUI({
     mode : "custom",
     touch : touchHandler,
     swipe : swipeHandler,
     drag : (e)=>{
-      if (ebLast==0) {
-        Bangle.musicControl("volumegetlevel");
-        setTimeout(()=>{require("SliderInput").interface(callback, {timeout:0.0001, useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false});},200);
-        }
-        ebLast = e.b;
+  if (ebLast==0) {
+    Bangle.musicControl("vg"); // vg = Volume Get level
+    if (e.y<140 && !volumeSlider.v.dragActive) {
+      setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
+        volumeSlider.c.steps=audioLevels.u;
+        volumeSlider.v.level=audioLevels.c;
+      },200);
+      volumeSlider.v.dy = 0;
+      Bangle.prependListener('drag', volumeSlider.f.dragSlider);
+    }
+    if (e.y>=140 && !progressBar.v.dragActive) {
+      Bangle.prependListener('drag',progressBar.f.dragSlider);
+    }
+  }
+  ebLast = e.b;
     },
     remove : ()=>{
       Bangle.removeListener("touch", touchHandler);
@@ -275,6 +335,6 @@ let savedMenu = {
 };
 
 Bangle.loadWidgets();
-setUI();
 gfx();
+setUI();
 }
