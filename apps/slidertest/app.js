@@ -21,48 +21,48 @@ setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.
 
 //// Functional logic
 
-// callback is used with sliderObject
-let callback = (mode,fb)=>{
+// cbVolumeSlider is used with volumeSlider
+let cbVolumeSlider = (mode,fb)=>{
   if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
   if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
   if (mode =="remove") {
     audioLevels.c = fb;
     ebLast = 0;
-    draw(sliderObject.c.r);
-    //sliderObject2.f.draw(sliderObject2.v.level);
+    draw(volumeSlider.c.r);
+    //progressBar.f.draw(progressBar.v.level);
     print(process.memory().usage);
     print("#drag handlers: " + Bangle["#ondrag"].length)
   }
 };
 
-// callback2 is used with sliderObject2
-let callback2 = (mode,fb)=>{
+// cbProgressbar is used with progressBar
+let cbProgressbar = (mode,fb)=>{
   currentLevel = fb;
   if (mode =="map") Bangle.musicControl({cmd:"seek",extra:fb});
   //print(process.memory().usage);
   //print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
-// SliderObject controls volume level on the android device.
-let sliderObject=require("Slider").create(
-    callback,
+// volumeSlider controls volume level on the android device.
+let volumeSlider=require("Slider").create(
+    cbVolumeSlider,
     {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
   );
 
-// SliderObject2 follows the media track playing on the android device.
-let sliderObject2;
-let initSlider2 = ()=>{
-  sliderObject2 = require("Slider").create(
-      callback2,
+// progressBar follows the media track playing on the android device.
+let progressBar;
+let initProgressBar = ()=>{
+  progressBar = require("Slider").create(
+      cbProgressbar,
       {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
     );
-  sliderObject2.f.draw(sliderObject2.v.level);
-  if (trackState==="play") sliderObject2.f.startAutoUpdate();
+  progressBar.f.draw(progressBar.v.level);
+  if (trackState==="play") progressBar.f.startAutoUpdate();
   }
 
 let init = ()=> {
   draw();
-  initSlider2();
+  initProgressBar();
 }
 
 // Get audio levels from Android device
@@ -82,10 +82,10 @@ let messageHandler = (type, msg)=>{
     trackState = msg.state;
     trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
     trackDur = msg.dur;
-    if (sliderObject2) {
-        sliderObject2.f.stopAutoUpdate();
-        sliderObject2.f.remove();
-        initSlider2();
+    if (progressBar) {
+        progressBar.f.stopAutoUpdate();
+        progressBar.f.remove();
+        initProgressBar();
       }
     blink() // Indicate when a message arrives.
   }
@@ -96,16 +96,16 @@ let ebLast = 0; // Used for fix/Hack needed because there is a timeout before th
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
     Bangle.musicControl("vg"); // vg = Volume Get level
-    if (e.y<140 && !sliderObject.v.dragActive) {
+    if (e.y<140 && !volumeSlider.v.dragActive) {
       setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
-        sliderObject.c.steps=audioLevels.u;
-        sliderObject.v.level=audioLevels.c;
+        volumeSlider.c.steps=audioLevels.u;
+        volumeSlider.v.level=audioLevels.c;
       },200);
-      sliderObject.v.dy = 0;
-      Bangle.prependListener('drag', sliderObject.f.dragSlider);
+      volumeSlider.v.dy = 0;
+      Bangle.prependListener('drag', volumeSlider.f.dragSlider);
     }
-    if (e.y>=140 && !sliderObject2.v.dragActive) {
-      Bangle.prependListener('drag',sliderObject2.f.dragSlider);
+    if (e.y>=140 && !progressBar.v.dragActive) {
+      Bangle.prependListener('drag',progressBar.f.dragSlider);
     }
   }
   ebLast = e.b;
