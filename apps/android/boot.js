@@ -55,8 +55,9 @@
       "musicinfo" : function() { print("android/boot/musicinfo");
         require("messages").pushMessage(Object.assign(event, {t:"modify",id:"music",title:"Music",src:"musicinfo"}));
       },
+      // {t:"audio", l(level):{c:[current volume level], u:[upper volume level]}}
       "audio" : ()=>{
-        Bangle.emit('audio', event.level);
+        Bangle.emit('audio', event.l);
       },
       // {"t":"call","cmd":"incoming/end","name":"Bob","number":"12421312"})
       "call" : function() {
