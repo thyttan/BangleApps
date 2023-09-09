@@ -1,31 +1,9 @@
 {
 Bangle.setLCDTimeout(0) // Easier to read the screen while developing.
 
-// Callbacks for use with the sliders
+//// Drawing operations
 
-let callback = (mode,fb)=>{
-  if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
-  if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
-  if (mode =="remove") {
-    audioLevels.c = fb;
-    ebLast = 0;
-    draw(sliderObject.c.r);
-    //sliderObject2.f.draw(sliderObject2.v.level);
-    print(process.memory().usage);
-    print("#drag handlers: " + Bangle["#ondrag"].length)
-  }
-};
-
-let callback2 = (mode,fb)=>{
-  currentLevel = fb;
-  if (mode =="map") Bangle.musicControl({cmd:"seek",extra:fb});
-  //print(process.memory().usage);
-  //print("#drag handlers: " + Bangle["#ondrag"].length)
-};
-
-// Drawing operations
-
-Bangle.loadWidgets();
+Bangle.loadWidgets(); // So appRect takes widgets into account.
 let R = Bangle.appRect;
 
 let draw = (rect)=>{
@@ -41,8 +19,37 @@ g.reset().setColor(0,1,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);
 setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);},100);},0);
 };
 
-// Functional logic
+//// Functional logic
 
+// callback is used with sliderObject
+let callback = (mode,fb)=>{
+  if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
+  if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
+  if (mode =="remove") {
+    audioLevels.c = fb;
+    ebLast = 0;
+    draw(sliderObject.c.r);
+    //sliderObject2.f.draw(sliderObject2.v.level);
+    print(process.memory().usage);
+    print("#drag handlers: " + Bangle["#ondrag"].length)
+  }
+};
+
+// callback2 is used with sliderObject2
+let callback2 = (mode,fb)=>{
+  currentLevel = fb;
+  if (mode =="map") Bangle.musicControl({cmd:"seek",extra:fb});
+  //print(process.memory().usage);
+  //print("#drag handlers: " + Bangle["#ondrag"].length)
+};
+
+// SliderObject controls volume level on the android device.
+let sliderObject=require("SliderInput").interface(
+    callback,
+    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
+  );
+
+// SliderObject2 follows the media track playing on the android device.
 let sliderObject2;
 let initSlider2 = ()=>{
   sliderObject2 = require("SliderInput").interface(
@@ -58,11 +65,13 @@ let init = ()=> {
   initSlider2();
 }
 
+// Get audio levels from Android device
 let audioLevels = {u:30, c:15}; // Init with values to avoid "Uncaught Error: Cannot read property 'u' of undefined" if values were not gathered from Gadgetbridge.
 let audioHandler = (e)=>{audioLevels = e;print(audioLevels);};
 Bangle.on('audio', audioHandler);
 Bangle.musicControl("vg"); // vg = Volume Get level
 
+// Handle music messages
 // Bangle.emit("message", type, msg);
 let trackPosition = 0;
 let trackDur = 30;
@@ -84,16 +93,11 @@ let messageHandler = (type, msg)=>{
 Bangle.on('message', messageHandler);
 
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
-let sliderObject=require("SliderInput").interface(
-    callback,
-    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
-  );
-
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
     Bangle.musicControl("vg"); // vg = Volume Get level
     if (e.y<140 && !sliderObject.v.dragActive) {
-      setTimeout(()=>{
+      setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
         sliderObject.c.steps=audioLevels.u;
         sliderObject.v.level=audioLevels.c;
       },200);
