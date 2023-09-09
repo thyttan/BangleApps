@@ -1,6 +1,8 @@
 {
 Bangle.setLCDTimeout(0) // Easier to read the screen while developing.
 
+// Callbacks for use with the sliders
+
 let callback = (mode,fb)=>{
   if (mode =="map") Bangle.musicControl({cmd:"volumesetlevel",extra:Math.round(100*fb/30)});
   if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
@@ -21,6 +23,11 @@ let callback2 = (mode,fb)=>{
   //print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
+// Drawing operations
+
+Bangle.loadWidgets();
+let R = Bangle.appRect;
+
 let draw = (rect)=>{
   g.reset();
   if (rect) g.setClipRect(rect.x1, rect.y1, rect.x2, rect.y2);
@@ -33,6 +40,8 @@ let blink = ()=>{setTimeout(()=>{
 g.reset().setColor(0,1,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);
 setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);},100);},0);
 };
+
+// Functional logic
 
 let sliderObject2;
 let initSlider2 = ()=>{
@@ -74,10 +83,6 @@ let messageHandler = (type, msg)=>{
 }
 Bangle.on('message', messageHandler);
 
-Bangle.loadWidgets();
-let R = Bangle.appRect;
-init();
-
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
 let sliderObject=require("SliderInput").interface(
     callback,
@@ -102,5 +107,8 @@ Bangle.on('drag', (e)=>{
   ebLast = e.b;
 }
 );
+
+init();
+
 //print("#drag handlers: " + Bangle["#ondrag"].length)
 }
