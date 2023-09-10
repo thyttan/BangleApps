@@ -156,8 +156,9 @@ let progressBar;
 let initProgressBar = ()=>{
   progressBar = require("Slider").create(
       cbProgressbar,
-      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:8, xStart:R.x2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8,colorFG:colorFG}
+      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:8, xStart:R.x2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8,colorFG:colorFG, noOuterBorder:true, noInnerBorder:true}
     );
+    print(progressBar.c)
   progressBar.f.draw(progressBar.v.level);
   if (trackState==="play") progressBar.f.startAutoUpdate();
   }
