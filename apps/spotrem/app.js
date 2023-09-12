@@ -46,8 +46,16 @@ let gfx = function() {
 
   g.setFontAlign(1, 1, 0);
   g.drawString("Saved", R.x + R.w - 2*marigin, R.y + R.h - 2*marigin);
-
 };
+
+let removeGfxListeners = ()=>{
+  //Bangle.removeListener("touch", touchHandler);
+  //Bangle.removeListener("swipe", swipeHandler);
+  progressBar.v.shouldAutoDraw = false;
+  //progressBar.f.stopAutoUpdate();
+  //progressBar.f.remove();
+  //Bangle.setUI();
+}
 
 // Touch handler for main layout
 let touchHandler = function(_, xy) {
@@ -55,47 +63,53 @@ let touchHandler = function(_, xy) {
   y = xy.y;
   len = (R.w<R.h+1)?(R.w/3):(R.h/3);
 
-  // doing a<b+1 seemed faster than a<=b, also using a>b-1 instead of a>b.
-  if ((R.x-1<x && x<R.x+len) && (R.y-1<y && y<R.y+len)) {
-    //Menu
-    Bangle.removeListener("touch", touchHandler);
-    Bangle.removeListener("swipe", swipeHandler);
-    backToMenu = true;
-    E.showMenu(spotifyMenu);
-  } else if ((R.x-1<x && x<R.x+len) && (R.y2-len<y && y<R.y2+1)) {
-    //Wake
-    gadgetbridgeWake();
-  } else if ((R.x2-len<x && x<R.x2+1) && (R.y-1<y && y<R.y+len)) {
-    //Srch
-    Bangle.removeListener("touch", touchHandler);
-    Bangle.removeListener("swipe", swipeHandler);
-    E.showMenu(searchMenu);
-  } else if ((R.x2-len<x && x<R.x2+1) && (R.y2-len<y && y<R.y2+1)) {
-    //Saved
-    Bangle.removeListener("touch", touchHandler);
-    Bangle.removeListener("swipe", swipeHandler);
-    E.showMenu(savedMenu);
-  } else if ((R.x-1<x && x<R.x+len) && (R.y+R.h/2-len/2<y && y<R.y+R.h/2+len/2)) {
-    //Previous
-    spotifyWidget("PREVIOUS");
-  } else if ((R.x2-len+1<x && x<R.x2+1) && (R.y+R.h/2-len/2<y && y<R.y+R.h/2+len/2)) {
-    //Next
-    spotifyWidget("NEXT");
-  } else if ((R.x-1<x && x<R.x2+1) && (R.y-1<y && y<R.y2+1)){
-    //play/pause
-    playPause = isPaused?"play":"pause";
-    Bangle.musicControl(playPause);
-    isPaused = !isPaused;
-  }
+    // doing a<b+1 seemed faster than a<=b, also using a>b-1 instead of a>b.
+    if ((R.x-1<x && x<R.x+len) && (R.y-1<y && y<R.y+len)) {
+      //Menu
+      removeGfxListeners();
+      backToMenu = true;
+      E.showMenu(spotifyMenu);
+    } else if ((R.x-1<x && x<R.x+len) && (R.y2-len<y && y<R.y2+1)) {
+      //Wake
+      gadgetbridgeWake();
+    } else if ((R.x2-len<x && x<R.x2+1) && (R.y-1<y && y<R.y+len)) {
+      //Srch
+      removeGfxListeners();
+      E.showMenu(searchMenu);
+    } else if ((R.x2-len<x && x<R.x2+1) && (R.y2-len<y && y<R.y2+1)) {
+      //Saved
+      removeGfxListeners();
+      E.showMenu(savedMenu);
+    } else if ((R.x-1<x && x<R.x+len) && (R.y+R.h/2-len/2<y && y<R.y+R.h/2+len/2)) {
+      //Previous
+      spotifyWidget("PREVIOUS");
+    } else if ((R.x2-len+1<x && x<R.x2+1) && (R.y+R.h/2-len/2<y && y<R.y+R.h/2+len/2)) {
+      //Next
+      spotifyWidget("NEXT");
+    } else if ((R.x-1<x && x<R.x2+1) && (R.y-1<y && y<R.y2+1)){
+      //play/pause
+      playPause = isPaused?"play":"pause";
+      Bangle.musicControl(playPause);
+      isPaused = !isPaused;
+    }
 };
 
 // Swipe handler for main layout, used for next previous track.
 let swipeHandler = function(LR, _) {
   if (LR==-1) {
     spotifyWidget("NEXT");
-  }
-  if (LR==1) {
+  } else if (LR==1) {
     spotifyWidget("PREVIOUS");
+  } else {
+    Bangle.musicControl("vg"); // vg = Volume Get level
+    if (!volumeSlider.v.dragActive) {
+      setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
+        volumeSlider.c.steps=audioLevels.u;
+        volumeSlider.v.level=audioLevels.c;
+      },200);
+      volumeSlider.v.dy = 0;
+      Bangle.prependListener('drag', volumeSlider.f.dragSlider);
+    }
   }
 };
 
@@ -104,63 +118,67 @@ let audioHandler = (e)=>{audioLevels = e;};
 Bangle.on('audio', audioHandler);
 Bangle.musicControl("vg");
 
+let progressBar;
+let volumeSlider;
+
 // Navigation input on the main layout
 let setUI = function() {
-// Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
+  // Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
 
-// cbVolumeSlider is used with volumeSlider
-let cbVolumeSlider = (mode,fb)=>{
-  if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
-  if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
-  if (mode =="remove") {
-    audioLevels.c = fb;
-    ebLast = 0;
-    gfx();
-    progressBar.f.draw(progressBar.v.level);
-  }
-};
+  // cbVolumeSlider is used with volumeSlider
+  let cbVolumeSlider = (mode,fb)=>{
+    if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
+    if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
+    if (mode =="remove") {
+      print("volumeSlider "+mode)
+      audioLevels.c = fb;
+      ebLast = 0;
+      gfx();
+      progressBar.f.draw(progressBar.v.level);
+    }
+  };
 
-// cbProgressbar is used with progressBar
-let cbProgressbar = (mode,fb)=>{
-  if (mode == "auto" && volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
-};
+  // cbProgressbar is used with progressBar
+  let cbProgressbar = (mode,fb)=>{
+    print("progress",mode,fb)
+    if (mode== "remove") print("progressBar: "+mode)
+    if (mode == "auto" && volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
+  };
 
-// volumeSlider controls volume level on the android device.
-let volumeSlider=require("Slider").create(
+  // volumeSlider controls volume level on the android device.
+  volumeSlider=require("Slider").create(
     cbVolumeSlider,
-    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true, colorFG:colorFG}
+    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
   );
-  
-// Handle music messages
-// Bangle.emit("message", type, msg);
-let trackPosition = 0;
-let trackDur = 30;
-let trackState = "pause";
-let messageHandler = (type, msg)=>{
-  print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
-  if (type==='music' && msg.src=="musicstate") {
-    trackState = msg.state;
-    trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
-    trackDur = msg.dur;
-    if (progressBar) {
+
+  // Handle music messages
+  // Bangle.emit("message", type, msg);
+  let trackPosition = 0;
+  let trackDur = 30;
+  let trackState = "pause";
+  let messageHandler = (type, msg)=>{
+    print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
+    if (type==='music' && msg.src=="musicstate") {
+      trackState = msg.state;
+      trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
+      trackDur = msg.dur;
+      if (progressBar) {
         progressBar.f.stopAutoUpdate();
         progressBar.f.remove();
         initProgressBar();
       }
+    }
   }
-}
-Bangle.on('message', messageHandler);
+  Bangle.on('message', messageHandler);
 
-// progressBar follows the media track playing on the android device.
-let progressBar;
-let initProgressBar = ()=>{
-  progressBar = require("Slider").create(
+  // progressBar follows the media track playing on the android device.
+  let initProgressBar = ()=>{
+    progressBar = require("Slider").create(
       cbProgressbar,
-      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:8, xStart:R.x2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8,colorFG:colorFG, noOuterBorder:true, noInnerBorder:true}
+      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:1, xStart:R.x2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8,colorFG:colorFG, outerBorderSize:0, innerBorderSize:0}
     );
-    print(progressBar.c)
-  progressBar.f.draw(progressBar.v.level);
-  if (trackState==="play") progressBar.f.startAutoUpdate();
+    progressBar.f.draw(progressBar.v.level);
+    if (trackState==="play") progressBar.f.startAutoUpdate();
   }
   initProgressBar();
 
@@ -169,27 +187,16 @@ let initProgressBar = ()=>{
     mode : "custom",
     touch : touchHandler,
     swipe : swipeHandler,
-    drag : (e)=>{
-  if (ebLast==0) {
-    Bangle.musicControl("vg"); // vg = Volume Get level
-    if (e.y<140 && !volumeSlider.v.dragActive) {
-      setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
-        volumeSlider.c.steps=audioLevels.u;
-        volumeSlider.v.level=audioLevels.c;
-      },200);
-      volumeSlider.v.dy = 0;
-      Bangle.prependListener('drag', volumeSlider.f.dragSlider);
-    }
-    if (e.y>=140 && !progressBar.v.dragActive) {
-      Bangle.prependListener('drag',progressBar.f.dragSlider);
-    }
-  }
-  ebLast = e.b;
-    },
     remove : ()=>{
-      Bangle.removeListener("touch", touchHandler);
-      Bangle.removeListener("swipe", swipeHandler);
+      removeGfxListeners();
       clearWatch(buttonHandler);
+      if (volumeSlider) {
+        volumeSlider.f.remove();
+      }
+      if (progressBar) {
+        //progressBar.f.stopAutoUpdate();
+        //progressBar.f.remove();
+      }
       widgetUtils.show();
     }
   });
@@ -203,6 +210,9 @@ let backToGfx = function() {
   g.reset();
   setUI();
   gfx();
+  progressBar.v.shouldAutoDraw = true;
+  print("proglevel: ", progressBar.v.level)
+  progressBar.f.draw(progressBar.v.level);
   backToMenu = false;
 };
 
