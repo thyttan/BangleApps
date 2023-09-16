@@ -3,10 +3,9 @@
 * Bluetooth.println(JSON.stringify({t:"intent", target:"", action:"", flags:["flag1", "flag2",...], categories:["category1","category2",...], package:"", class:"", mimetype:"", data:"", extra:{someKey:"someValueOrString", anotherKey:"anotherValueOrString",...}}));
 */
 
-let R;
+let R = Bangle.appRect;
 let widgetUtils = require("widget_utils");
 let backToMenu = false;
-let isPaused = true;
 let colorFG = g.theme.dark?0x07E0:0x03E0; // Green on dark theme, DarkGreen on light theme.
 
 // The main layout of the app
@@ -16,6 +15,7 @@ let gfx = function() {
   marigin = 8;
   // g.drawString(str, x, y, solid)
   g.clearRect(R);
+  progressBar.f.draw(progressBar.v.level);
   g.reset();
 
   g.setColor(colorFG) 
@@ -48,13 +48,18 @@ let gfx = function() {
   g.drawString("Saved", R.x + R.w - 2*marigin, R.y + R.h - 2*marigin);
 };
 
-let removeGfxListeners = ()=>{
-  //Bangle.removeListener("touch", touchHandler);
-  //Bangle.removeListener("swipe", swipeHandler);
-  progressBar.v.shouldAutoDraw = false;
-  //progressBar.f.stopAutoUpdate();
-  //progressBar.f.remove();
-  //Bangle.setUI();
+let isPaused = false;
+let playPause = "play";
+let toggle = ()=>{
+    playPause = isPaused?"play":"pause";
+    Bangle.musicControl(playPause);
+    isPaused = !isPaused;
+  }
+
+let bridgeOverToMenu = ()=>{
+  if (!isPaused) progressBar.f.startAutoUpdate();
+  Bangle.on('message', messageHandler);
+  Bangle.on('audio', audioHandler);
 }
 
 // Touch handler for main layout
@@ -66,20 +71,20 @@ let touchHandler = function(_, xy) {
     // doing a<b+1 seemed faster than a<=b, also using a>b-1 instead of a>b.
     if ((R.x-1<x && x<R.x+len) && (R.y-1<y && y<R.y+len)) {
       //Menu
-      removeGfxListeners();
       backToMenu = true;
       E.showMenu(spotifyMenu);
+      bridgeOverToMenu()
     } else if ((R.x-1<x && x<R.x+len) && (R.y2-len<y && y<R.y2+1)) {
       //Wake
       gadgetbridgeWake();
     } else if ((R.x2-len<x && x<R.x2+1) && (R.y-1<y && y<R.y+len)) {
       //Srch
-      removeGfxListeners();
       E.showMenu(searchMenu);
+      bridgeOverToMenu()
     } else if ((R.x2-len<x && x<R.x2+1) && (R.y2-len<y && y<R.y2+1)) {
       //Saved
-      removeGfxListeners();
       E.showMenu(savedMenu);
+      bridgeOverToMenu()
     } else if ((R.x-1<x && x<R.x+len) && (R.y+R.h/2-len/2<y && y<R.y+R.h/2+len/2)) {
       //Previous
       spotifyWidget("PREVIOUS");
@@ -88,9 +93,7 @@ let touchHandler = function(_, xy) {
       spotifyWidget("NEXT");
     } else if ((R.x-1<x && x<R.x2+1) && (R.y-1<y && y<R.y2+1)){
       //play/pause
-      playPause = isPaused?"play":"pause";
-      Bangle.musicControl(playPause);
-      isPaused = !isPaused;
+      toggle();
     }
 };
 
@@ -121,6 +124,47 @@ Bangle.musicControl("vg");
 let progressBar;
 let volumeSlider;
 
+//let iProgress=0;
+
+  // cbProgressbar is used with progressBar
+  let cbProgressbar = (mode,fb)=>{
+//    iProgress+=1;
+//    print(iProgress,"progress",mode,fb)
+//    if (mode== "remove") print("progressBar: "+mode)
+    if (mode == "auto" && volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
+  };
+
+  // Handle music messages
+  // Bangle.emit("message", type, msg);
+  let trackPosition = 0;
+  let trackDur = 30;
+  let trackState = "pause";
+  let messageHandler = (type, msg)=>{
+    print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
+    if (type==='music' && msg.src=="musicstate") {
+      trackState = msg.state;
+      trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
+      trackDur = msg.dur;
+      if (progressBar) {
+        progressBar.f.stopAutoUpdate();
+        progressBar.f.remove();
+        initProgressBar(progressBar.v.shouldAutoDraw);
+      }
+    }
+  }
+  Bangle.on('message', messageHandler);
+
+  // progressBar follows the media track playing on the android device.
+  let initProgressBar = (shouldAutoDraw)=>{
+    progressBar = require("Slider").create(
+      cbProgressbar,
+      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:2, xStart:R.y2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+14, height: R.w-30 ,colorFG:colorFG, outerBorderSize:0, innerBorderSize:0}
+    );
+    progressBar.v.shouldAutoDraw = shouldAutoDraw;
+    if (progressBar.v.shouldAutoDraw) progressBar.f.draw(progressBar.v.level);
+    if (trackState==="play") progressBar.f.startAutoUpdate();
+  }
+
 // Navigation input on the main layout
 let setUI = function() {
   // Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
@@ -138,49 +182,11 @@ let setUI = function() {
     }
   };
 
-  // cbProgressbar is used with progressBar
-  let cbProgressbar = (mode,fb)=>{
-    print("progress",mode,fb)
-    if (mode== "remove") print("progressBar: "+mode)
-    if (mode == "auto" && volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
-  };
-
   // volumeSlider controls volume level on the android device.
   volumeSlider=require("Slider").create(
     cbVolumeSlider,
     {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
   );
-
-  // Handle music messages
-  // Bangle.emit("message", type, msg);
-  let trackPosition = 0;
-  let trackDur = 30;
-  let trackState = "pause";
-  let messageHandler = (type, msg)=>{
-    print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
-    if (type==='music' && msg.src=="musicstate") {
-      trackState = msg.state;
-      trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
-      trackDur = msg.dur;
-      if (progressBar) {
-        progressBar.f.stopAutoUpdate();
-        progressBar.f.remove();
-        initProgressBar();
-      }
-    }
-  }
-  Bangle.on('message', messageHandler);
-
-  // progressBar follows the media track playing on the android device.
-  let initProgressBar = ()=>{
-    progressBar = require("Slider").create(
-      cbProgressbar,
-      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:1, xStart:R.x2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8,colorFG:colorFG, outerBorderSize:0, innerBorderSize:0}
-    );
-    progressBar.f.draw(progressBar.v.level);
-    if (trackState==="play") progressBar.f.startAutoUpdate();
-  }
-  initProgressBar();
 
   let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
   Bangle.setUI({
@@ -188,15 +194,18 @@ let setUI = function() {
     touch : touchHandler,
     swipe : swipeHandler,
     remove : ()=>{
-      removeGfxListeners();
-      clearWatch(buttonHandler);
+      print("setUI remove function called!")
+      progressBar.v.shouldAutoDraw = false;
+      Bangle.removeListener('message', messageHandler);
+      Bangle.removeListener('audio', audioHandler);
       if (volumeSlider) {
         volumeSlider.f.remove();
       }
       if (progressBar) {
-        //progressBar.f.stopAutoUpdate();
+        progressBar.f.stopAutoUpdate();
         //progressBar.f.remove();
       }
+      clearWatch(buttonHandler);
       widgetUtils.show();
     }
   });
@@ -298,7 +307,7 @@ let spotifyMenu = {
   "Search and play" : ()=>{E.showMenu(searchMenu);},
   "Saved music" : ()=>{E.showMenu(savedMenu);},
   "Wake the android" : function() {gadgetbridgeWake();gadgetbridgeWake();},
-  "Exit Spotify Remote" : ()=>{load();}
+  "Exit Spotify Remote" : ()=>{progressBar.f.stopAutoUpdate(); load();}
 };
 
 let menuBackFunc = ()=>{
@@ -346,6 +355,7 @@ let savedMenu = {
 };
 
 Bangle.loadWidgets();
+initProgressBar(true);
 gfx();
 setUI();
 }
