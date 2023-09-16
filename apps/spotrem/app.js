@@ -141,7 +141,7 @@ let volumeSlider;
   let trackState = "pause";
   let messageHandler = (type, msg)=>{
     print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
-    if (type==='music' && msg.src=="musicstate") {
+    if (msg.src=="musicstate") { // `musicstate` messages arrive last. The positional info is contained there. To avoid yankiness only act once this has arrived.
       trackState = msg.state;
       trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
       trackDur = msg.dur;
