@@ -217,8 +217,8 @@ let backToGfx = function() {
   E.showMenu();
   g.clear();
   g.reset();
-  setUI();
   gfx();
+  setUI();
   progressBar.v.shouldAutoDraw = true;
   print("proglevel: ", progressBar.v.level)
   progressBar.f.draw(progressBar.v.level);
