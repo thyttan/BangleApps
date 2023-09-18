@@ -1,5 +1,10 @@
 {
-Bangle.setLCDTimeout(0) // Easier to read the screen while developing.
+let setDevMode = ()=>{
+  Bangle.setLCDTimeout(0); // Easier to read the screen while developing.
+  Bangle.setLocked(false);
+  Bangle.setLCDPower(0.5);
+};
+setDevMode();
 
 //// Drawing operations
 
