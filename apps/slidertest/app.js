@@ -97,18 +97,22 @@ let init = ()=> {
   initProgressBar();
 }
 
+let isAnySliderDragActive = ()=>{
+  return (volumeSlider.v.dragActive || progressBar.v.dragActive);
+}
+
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
     Bangle.musicControl("vg"); // vg = Volume Get level
-    if (e.y<140 && !volumeSlider.v.dragActive) {
+    if (e.y<140 && !isAnySliderDragActive) {
       setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
         volumeSlider.c.steps=audioLevels.u;
         volumeSlider.v.level=audioLevels.c;
       },200);
       Bangle.prependListener('drag', volumeSlider.f.dragSlider);
     }
-    if (e.y>=140 && !progressBar.v.dragActive) {
+    if (e.y>=140 && !isAnySliderDragActive()) {
       Bangle.prependListener('drag',progressBar.f.dragSlider);
     }
   }
