@@ -118,7 +118,6 @@ let swipeHandler = function(LR, _) {
         volumeSlider.c.steps=audioLevels.u;
         volumeSlider.v.level=audioLevels.c;
       },200);
-      volumeSlider.v.dy = 0;
       Bangle.prependListener('drag', volumeSlider.f.dragSlider);
     }
   }
