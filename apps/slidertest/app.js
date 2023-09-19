@@ -20,8 +20,8 @@ let draw = (rect)=>{
 };
 
 let blink = ()=>{setTimeout(()=>{
-g.reset().setColor(0,1,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);
-setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);},100);},0);
+  g.reset().setColor(0,1,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);
+  setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);},100);},0);
 };
 
 //// Functional logic
@@ -44,10 +44,10 @@ let messageHandler = (type, msg)=>{
     trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
     trackDur = msg.dur;
     if (progressBar) {
-        progressBar.f.stopAutoUpdate();
-        progressBar.f.remove();
-        initProgressBar();
-      }
+      progressBar.f.stopAutoUpdate();
+      progressBar.f.remove();
+      initProgressBar();
+    }
     blink() // Indicate when a message arrives.
   }
 }
@@ -77,20 +77,20 @@ let cbProgressbar = (mode,fb)=>{
 
 // volumeSlider controls volume level on the android device.
 let volumeSlider=require("Slider").create(
-    cbVolumeSlider,
-    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
-  );
+  cbVolumeSlider,
+  {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
+);
 
 // progressBar follows the media track playing on the android device.
 let progressBar;
 let initProgressBar = ()=>{
   progressBar = require("Slider").create(
-      cbProgressbar,
-      {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
-    );
+    cbProgressbar,
+    {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
+  );
   progressBar.f.draw(progressBar.v.level);
   if (trackState==="play") progressBar.f.startAutoUpdate();
-  }
+}
 
 let init = ()=> {
   draw();
