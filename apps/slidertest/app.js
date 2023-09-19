@@ -106,7 +106,6 @@ Bangle.on('drag', (e)=>{
         volumeSlider.c.steps=audioLevels.u;
         volumeSlider.v.level=audioLevels.c;
       },200);
-      volumeSlider.v.dy = 0;
       Bangle.prependListener('drag', volumeSlider.f.dragSlider);
     }
     if (e.y>=140 && !progressBar.v.dragActive) {
