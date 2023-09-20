@@ -2,7 +2,8 @@
 let setDevMode = ()=>{
   Bangle.setLCDTimeout(0); // Easier to read the screen while developing.
   Bangle.setLocked(false);
-  Bangle.setLCDPower(0.5);
+  Bangle.setLCDBrightness(0.6);
+  Bangle.setLCDPower(true);
 };
 setDevMode();
 
@@ -11,10 +12,13 @@ setDevMode();
 Bangle.loadWidgets(); // So appRect takes widgets into account.
 let R = Bangle.appRect;
 
+let backDropColor = [1,0,0];
+
 let draw = (rect)=>{
   g.reset();
   if (rect) g.setClipRect(rect.x1, rect.y1, rect.x2, rect.y2);
-  g.setColor(1,0,0).fillRect(0,0,176,176);
+  g.setColor(backDropColor[0],backDropColor[1],backDropColor[2]).fillRect(0,0,176,176);
+  g.setColor(1,1,1).drawLine(xA, R.y, xA, yA).drawLine(xB, R.y, xB, yA);
   g.reset();
   Bangle.drawWidgets();
 };
@@ -67,6 +71,33 @@ let cbVolumeSlider = (mode,fb)=>{
   }
 };
 
+let cbColorSlider = (mode,fb)=>{
+  if (mode =="incr") {
+    let l = colorSlider.v.level;
+    print("color mode: " + l);
+    if (l===0) backDropColor = [1,0,0];
+    if (l===1) backDropColor = [.75,.25,0];
+    if (l===2) backDropColor = [.5,.5,0];
+    if (l===3) backDropColor = [.25,.75,0];
+    if (l===4) backDropColor = [0,1,0];
+    if (l===5) backDropColor = [0,.75,.25];
+    if (l===6) backDropColor = [0,.5,.5];
+    if (l===7) backDropColor = [0,.25,.75];
+    if (l===8) backDropColor = [0,0,1];
+    g.setColor(backDropColor[0],backDropColor[1],backDropColor[2]).fillRect(xA+1,R.y,xB-1,yA)
+  };
+  if (mode =="remove") {
+    init();
+  }
+};
+
+let cbBrightnessSlider = (mode,fb)=>{
+  if (mode =="map") Bangle.setLCDBrightness(fb/100);
+  if (mode =="remove") {
+
+  }
+};
+
 // cbProgressbar is used with progressBar
 let cbProgressbar = (mode,fb)=>{
   currentLevel = fb;
@@ -75,10 +106,26 @@ let cbProgressbar = (mode,fb)=>{
   //print("#drag handlers: " + Bangle["#ondrag"].length)
 };
 
+let xA = R.x+4*R.w/8;
+let xB = R.x+11*R.w/16;
+let yA = R.x2-Math.round(R.w/20)-5;
+
 // volumeSlider controls volume level on the android device.
 let volumeSlider=require("Slider").create(
   cbVolumeSlider,
-  {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-21, timeout:0.5, propagateDrag:true}
+  {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
+);
+
+// colorSlider controls the background color of this app.
+let colorSlider = require("Slider").create(
+  cbColorSlider,
+  {useIncr:true, useMap:false, steps:8, drawableSlider:false, xStart: R.x2-2*R.w/4, height:R.h-21, currLevel:0, propagateDrag:true, timeout:0, dragRect:{x:xA, y:0, x2:xB-1, y2: R.y2}}
+);
+
+// brightnessSlider controls the brightness of the Bangle.js
+let brightnessSlider = require("Slider").create(
+  cbBrightnessSlider,
+  {useIncr:false, useMap:true, steps:100, height:R.h-21, timeout:0, currLevel:100*0.2, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}}
 );
 
 // progressBar follows the media track playing on the android device.
@@ -86,7 +133,7 @@ let progressBar;
 let initProgressBar = ()=>{
   progressBar = require("Slider").create(
     cbProgressbar,
-    {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
+    {dragableSlider:false, useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
   );
   progressBar.f.draw(progressBar.v.level);
   if (trackState==="play") progressBar.f.startAutoUpdate();
@@ -95,30 +142,40 @@ let initProgressBar = ()=>{
 let init = ()=> {
   draw();
   initProgressBar();
+  brightnessSlider.f.draw(brightnessSlider.v.level);
 }
 
 let isAnySliderDragActive = ()=>{
-  return (volumeSlider.v.dragActive || progressBar.v.dragActive);
+  return (volumeSlider.v.dragActive || brightnessSlider.v.dragActive || colorSlider.v.dragActive || progressBar.v.dragActive);
 }
 
 let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
 Bangle.on('drag', (e)=>{
   if (ebLast==0) {
-    Bangle.musicControl("vg"); // vg = Volume Get level
-    if (e.y<140 && !isAnySliderDragActive) {
-      setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
-        volumeSlider.c.steps=audioLevels.u;
-        volumeSlider.v.level=audioLevels.c;
-      },200);
-      Bangle.prependListener('drag', volumeSlider.f.dragSlider);
+    //  if (!isAnySliderDragActive()) {
+    if (e.y<yA) {
+      if (e.x<xA && !volumeSlider.v.dragActive) {
+        Bangle.musicControl("vg"); // vg = Volume Get level
+        setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
+          volumeSlider.c.steps=audioLevels.u;
+          volumeSlider.v.level=audioLevels.c;
+        },200);
+        Bangle.prependListener('drag', volumeSlider.f.dragSlider);
+      }
+      if (e.x>=xA && e.x<xB && !colorSlider.v.dragActive) {
+        Bangle.prependListener('drag', colorSlider.f.dragSlider);
+      }
+      if (e.x>=xB && !brightnessSlider.v.dragActive) {
+        Bangle.prependListener('drag', brightnessSlider.f.dragSlider);
+      }
     }
-    if (e.y>=140 && !isAnySliderDragActive()) {
-      Bangle.prependListener('drag',progressBar.f.dragSlider);
+    if (e.y>=yA) {
+      progressBar.f.dragSlider&&Bangle.prependListener('drag',progressBar.f.dragSlider);
     }
+    //  }
   }
   ebLast = e.b;
-}
-);
+});
 
 init();
 
