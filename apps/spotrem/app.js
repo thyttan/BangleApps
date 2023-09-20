@@ -107,18 +107,22 @@
 
   // Swipe handler for main layout, used for next previous track.
   let swipeHandler = function(LR, _) {
-    if (LR==-1) {
+    if (LR===-1) {
       spotifyWidget("NEXT");
-    } else if (LR==1) {
+    }
+    if (LR===1) {
       spotifyWidget("PREVIOUS");
-    } else {
+    }
+    if (LR===0){
       Bangle.musicControl("vg"); // vg = Volume Get level
       if (!volumeSlider.v.dragActive) {
+        print("hi outside timeout")
         setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
+          print("hi inside timeout");
           volumeSlider.c.steps=audioLevels.u;
-          volumeSlider.v.level=audioLevels.c;
+          volumeSlider.v.level=2;//audioLevels.c;
         },200);
-        Bangle.prependListener('drag', volumeSlider.f.dragSlider);
+        Bangle.on('drag', volumeSlider.f.dragSlider);
       }
     }
   };
@@ -182,6 +186,7 @@
       if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
       if (mode =="remove") {
         print("volumeSlider "+mode)
+        print("volumeSlider dragActive: "+volumeSlider.v.dragActive)
         audioLevels.c = fb;
         ebLast = 0;
         gfx();
