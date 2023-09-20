@@ -52,9 +52,9 @@
         progressBar.f.remove();
         initProgressBar();
       }
-      blink() // Indicate when a message arrives.
+      blink(); // Indicate when a message arrives.
     }
-  }
+  };
   Bangle.on('message', messageHandler);
 
   // cbVolumeSlider is used with volumeSlider
@@ -67,7 +67,7 @@
       draw(volumeSlider.c.r);
       //progressBar.f.draw(progressBar.v.level);
       print(process.memory().usage);
-      print("#drag handlers: " + Bangle["#ondrag"].length)
+      print("#drag handlers: " + Bangle["#ondrag"].length);
     }
   };
 
@@ -76,16 +76,16 @@
       let l = colorSlider.v.level;
       print("color mode: " + l);
       if (l===0) backDropColor = [1,0,0];
-      if (l===1) backDropColor = [.75,.25,0];
-      if (l===2) backDropColor = [.5,.5,0];
-      if (l===3) backDropColor = [.25,.75,0];
+      if (l===1) backDropColor = [0.75,0.25,0];
+      if (l===2) backDropColor = [0.5,0.5,0];
+      if (l===3) backDropColor = [0.25,0.75,0];
       if (l===4) backDropColor = [0,1,0];
-      if (l===5) backDropColor = [0,.75,.25];
-      if (l===6) backDropColor = [0,.5,.5];
-      if (l===7) backDropColor = [0,.25,.75];
+      if (l===5) backDropColor = [0,0.75,0.25];
+      if (l===6) backDropColor = [0,0.5,0.5];
+      if (l===7) backDropColor = [0,0.25,0.75];
       if (l===8) backDropColor = [0,0,1];
-      g.setColor(backDropColor[0],backDropColor[1],backDropColor[2]).fillRect(xA+1,R.y,xB-1,yA)
-    };
+      g.setColor(backDropColor[0],backDropColor[1],backDropColor[2]).fillRect(xA+1,R.y,xB-1,yA);
+    }
     if (mode =="remove") {
       init();
     }
@@ -137,17 +137,17 @@
     );
     progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
-  }
+  };
 
   let init = ()=> {
     draw();
     initProgressBar();
     brightnessSlider.f.draw(brightnessSlider.v.level);
-  }
+  };
 
   let isAnySliderDragActive = ()=>{
     return (volumeSlider.v.dragActive || brightnessSlider.v.dragActive || colorSlider.v.dragActive || progressBar.v.dragActive);
-  }
+  };
 
   let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
   Bangle.on('drag', (e)=>{
