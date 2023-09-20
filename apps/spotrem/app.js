@@ -26,7 +26,7 @@
     progressBar.f.draw(progressBar.v.level);
     g.reset();
 
-    g.setColor(colorFG) 
+    g.setColor(colorFG);
     g.setFont("4x6:2");
     g.setFontAlign(1, 0, 0);
     g.drawString("->", R.x2 - marigin, R.y + R.h/2);
@@ -62,13 +62,13 @@
     playPause = isPaused?"play":"pause";
     Bangle.musicControl(playPause);
     isPaused = !isPaused;
-  }
+  };
 
   let bridgeOverToMenu = ()=>{
     if (!isPaused) progressBar.f.startAutoUpdate();
     Bangle.on('message', messageHandler);
     Bangle.on('audio', audioHandler);
-  }
+  };
 
   // Touch handler for main layout
   let touchHandler = function(_, xy) {
@@ -81,18 +81,18 @@
       //Menu
       backToMenu = true;
       E.showMenu(spotifyMenu);
-      bridgeOverToMenu()
+      bridgeOverToMenu();
     } else if ((R.x-1<x && x<R.x+len) && (R.y2-len<y && y<R.y2+1)) {
       //Wake
       gadgetbridgeWake();
     } else if ((R.x2-len<x && x<R.x2+1) && (R.y-1<y && y<R.y+len)) {
       //Srch
       E.showMenu(searchMenu);
-      bridgeOverToMenu()
+      bridgeOverToMenu();
     } else if ((R.x2-len<x && x<R.x2+1) && (R.y2-len<y && y<R.y2+1)) {
       //Saved
       E.showMenu(savedMenu);
-      bridgeOverToMenu()
+      bridgeOverToMenu();
     } else if ((R.x-1<x && x<R.x+len) && (R.y+R.h/2-len/2<y && y<R.y+R.h/2+len/2)) {
       //Previous
       spotifyWidget("PREVIOUS");
@@ -158,7 +158,7 @@
         initProgressBar(progressBar.v.shouldAutoDraw);
       }
     }
-  }
+  };
   Bangle.on('message', messageHandler);
 
   // progressBar follows the media track playing on the android device.
@@ -170,7 +170,7 @@
     progressBar.v.shouldAutoDraw = shouldAutoDraw;
     if (progressBar.v.shouldAutoDraw) progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
-  }
+  };
 
   // Navigation input on the main layout
   let setUI = function() {
