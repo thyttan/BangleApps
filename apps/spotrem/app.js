@@ -105,8 +105,11 @@
     }
   };
 
+  let volIncrPreSync;
+
   // Swipe handler for main layout, used for next previous track.
   let swipeHandler = function(LR, _) {
+    volIncrPreSync = 0; // updated inside cbVolumeSlider.
     if (LR===-1) {
       spotifyWidget("NEXT");
     }
@@ -120,7 +123,7 @@
         setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
           print("hi inside timeout");
           volumeSlider.c.steps=audioLevels.u;
-          volumeSlider.v.level=2;//audioLevels.c;
+          volumeSlider.v.level=audioLevels.c + volIncrPreSync;
         },200);
         Bangle.on('drag', volumeSlider.f.dragSlider);
       }
@@ -183,7 +186,10 @@
     // cbVolumeSlider is used with volumeSlider
     let cbVolumeSlider = (mode,fb)=>{
       if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
-      if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
+      if (mode =="incr") {
+        Bangle.musicControl(fb>0?"volumedown":"volumeup");
+        volIncrPreSync-=fb; // used inside timeout in swipeHandler to account for incr done before sync with android volume level.
+      }
       if (mode =="remove") {
         print("volumeSlider "+mode)
         print("volumeSlider dragActive: "+volumeSlider.v.dragActive)
