@@ -119,9 +119,7 @@
     if (LR===0){
       Bangle.musicControl("vg"); // vg = Volume Get level
       if (!volumeSlider.v.dragActive) {
-        print("hi outside timeout")
         setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
-          print("hi inside timeout");
           volumeSlider.c.steps=audioLevels.u;
           volumeSlider.v.level=audioLevels.c + volIncrPreSync;
         },200);
@@ -191,8 +189,6 @@
         volIncrPreSync-=fb; // used inside timeout in swipeHandler to account for incr done before sync with android volume level.
       }
       if (mode =="remove") {
-        print("volumeSlider "+mode)
-        print("volumeSlider dragActive: "+volumeSlider.v.dragActive)
         audioLevels.c = fb;
         ebLast = 0;
         gfx();
@@ -212,7 +208,6 @@
       touch : touchHandler,
       swipe : swipeHandler,
       remove : ()=>{
-        print("setUI remove function called!")
         progressBar.v.shouldAutoDraw = false;
         Bangle.removeListener('message', messageHandler);
         Bangle.removeListener('audio', audioHandler);
