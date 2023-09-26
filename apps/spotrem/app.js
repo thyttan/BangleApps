@@ -5,7 +5,7 @@
     Bangle.setLocked(false);
     Bangle.setLCDPower(0.5);
   };
-  setDevMode();
+  //setDevMode();
 
   //////
   // Bluetooth.println(JSON.stringify({t:"intent", target:"", action:"", flags:["flag1", "flag2",...], categories:["category1","category2",...], package:"", class:"", mimetype:"", data:"", extra:{someKey:"someValueOrString", anotherKey:"anotherValueOrString",...}}));
