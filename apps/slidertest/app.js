@@ -24,8 +24,9 @@
   };
 
   let blink = ()=>{setTimeout(()=>{
-    g.reset().setColor(0,1,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);
-    setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-5,R.y2/2-5,R.x2/2+5,R.y2/2+5);},100);},0);
+    g.reset().setColor(0,1,0).fillRect(R.x2/2-15,R.y2-29,R.x2/2-5,R.y2-19);
+    setTimeout(()=>{g.reset().setColor(1,0,0).fillRect(R.x2/2-15,R.y2-29,R.x2/2-5,R.y2-19);},100);
+  },0);
   };
 
   //// Functional logic
