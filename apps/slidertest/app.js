@@ -141,7 +141,9 @@
 
   let init = ()=> {
     draw();
-    initProgressBar();
+    if (progressBar) {
+      progressBar.f.draw(progressBar.v.level);
+    } else {initProgressBar();}
     brightnessSlider.f.draw(brightnessSlider.v.level);
   };
 
