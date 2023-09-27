@@ -49,7 +49,6 @@
       trackDur = msg.dur;
       if (progressBar) {
         progressBar.f.stopAutoUpdate();
-        progressBar.f.remove();
         initProgressBar();
       }
       blink(); // Indicate when a message arrives.
