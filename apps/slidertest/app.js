@@ -113,7 +113,7 @@
   // volumeSlider controls volume level on the android device.
   let volumeSlider=require("Slider").create(
     cbVolumeSlider,
-    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
+    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:true, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
   );
 
   // colorSlider controls the background color of this app.
