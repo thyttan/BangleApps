@@ -175,6 +175,7 @@
     progressBar.v.shouldAutoDraw = shouldAutoDraw;
     if (progressBar.v.shouldAutoDraw) progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
+    if (volumeSlider&&volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
   };
 
   // Navigation input on the main layout
