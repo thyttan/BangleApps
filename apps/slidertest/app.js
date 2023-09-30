@@ -113,7 +113,7 @@
   // volumeSlider controls volume level on the android device.
   let volumeSlider=require("Slider").create(
     cbVolumeSlider,
-    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:true, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
+    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
   );
 
   // colorSlider controls the background color of this app.
@@ -125,7 +125,7 @@
   // brightnessSlider controls the brightness of the Bangle.js
   let brightnessSlider = require("Slider").create(
     cbBrightnessSlider,
-    {useIncr:false, useMap:true, steps:100, height:R.h-21, timeout:0, currLevel:100*0.2, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}}
+    {useIncr:false, useMap:true, steps:100, height:R.h-21, timeout:0, currLevel:100*0.2, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}, rounded:true}
   );
 
   // progressBar follows the media track playing on the android device.
