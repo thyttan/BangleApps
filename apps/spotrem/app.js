@@ -65,7 +65,7 @@
   };
 
   let bridgeOverToMenu = ()=>{
-    if (!isPaused) progressBar.f.startAutoUpdate();
+    progressBar.f.stopAutoUpdate();
     Bangle.on('message', messageHandler);
     Bangle.on('audio', audioHandler);
   };
@@ -160,20 +160,19 @@
       if (progressBar) {
         progressBar.f.stopAutoUpdate();
         progressBar.f.remove();
-        initProgressBar(progressBar.v.shouldAutoDraw);
+        initProgressBar();
       }
     }
   };
   Bangle.on('message', messageHandler);
 
   // progressBar follows the media track playing on the android device.
-  let initProgressBar = (shouldAutoDraw)=>{
+  let initProgressBar = ()=>{
     progressBar = require("Slider").create(
       cbProgressbar,
       {useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:2, xStart:R.y2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+14, height: R.w-30 ,colorFG:colorFG, outerBorderSize:0, innerBorderSize:0}
     );
-    progressBar.v.shouldAutoDraw = shouldAutoDraw;
-    if (progressBar.v.shouldAutoDraw) progressBar.f.draw(progressBar.v.level);
+    progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
     if (volumeSlider&&volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
   };
@@ -209,7 +208,6 @@
       touch : touchHandler,
       swipe : swipeHandler,
       remove : ()=>{
-        progressBar.v.shouldAutoDraw = false;
         Bangle.removeListener('message', messageHandler);
         Bangle.removeListener('audio', audioHandler);
         if (volumeSlider) {
@@ -233,7 +231,8 @@
     g.reset();
     gfx();
     setUI();
-    progressBar.v.shouldAutoDraw = true;
+    progressBar.f.autoUpdate();
+    progressBar.f.startAutoUpdate();
     print("proglevel: ", progressBar.v.level)
     progressBar.f.draw(progressBar.v.level);
     backToMenu = false;
@@ -369,7 +368,8 @@
   };
 
   Bangle.loadWidgets();
-  initProgressBar(true);
+  initProgressBar();
   gfx();
   setUI();
 }
+
