@@ -125,7 +125,7 @@
   // brightnessSlider controls the brightness of the Bangle.js
   let brightnessSlider = require("Slider").create(
     cbBrightnessSlider,
-    {useIncr:false, useMap:true, steps:100, height:R.h-21, timeout:0, currLevel:100*0.2, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}, rounded:true}
+    {useIncr:false, useMap:true, steps:100, height:R.h-21, timeout:0, currLevel:100*0.0, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}, rounded:true}
   );
 
   // progressBar follows the media track playing on the android device.
