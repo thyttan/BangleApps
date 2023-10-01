@@ -12,13 +12,29 @@
 
 A square will blink when messages with music state arrives.
 
+The app is started:
+
 ![s](screenshot-0.png)
+
+The hidden volume slider on the left is draged:
+
 ![s](screenshot-1.png)
+
+The colour slider in the middle is draged:
+
 ![s](screenshot-2.png)
+
+The colour slider is released, redrawing with a new backgdrop:
+
 ![s](screenshot-3.png)
+
+The rounded brightness slider on the right is draged:
+
 ![s](screenshot-4.png)
 
-Add screen shots (if possible) to the app folder and link then into this file with ![](<name>.png)
+The progress bar at the bottom tracks a song on an android device.
+
+![s](screenshot-5.png)
 
 ## Usage
 
