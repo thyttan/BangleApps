@@ -199,7 +199,7 @@
     // volumeSlider controls volume level on the android device.
     volumeSlider=require("Slider").create(
       cbVolumeSlider,
-      {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
+      {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:true, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
     );
 
     let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
