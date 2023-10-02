@@ -46,13 +46,13 @@
     print("\n","type:"+type, "t:"+msg.t, "src:"+msg.src, "mode:"+msg.state, "pos:"+msg.position, "dur:"+msg.dur);
     if (type==='music' && msg.src=="musicstate") {
       trackState = msg.state;
-      trackPosition = msg.position + (trackState==="play"?1:0); // +1 to account for latency.
+      trackPosition = msg.position + (trackState==="play"?1:0); // +1 when playing to account for latency.
       trackDur = msg.dur;
       if (progressBar) {
         progressBar.f.stopAutoUpdate();
         initProgressBar();
       }
-      blink(); // Indicate when a message arrives.
+      blink(); // Indicate when a  `musicstate` message arrived.
     }
   };
   Bangle.on('message', messageHandler);
@@ -71,6 +71,7 @@
     }
   };
 
+  // cbColorSlider is used with progressBar
   let cbColorSlider = (mode,fb)=>{
     if (mode =="incr") {
       let l = colorSlider.v.level;
@@ -91,6 +92,7 @@
     }
   };
 
+  // cbBrightnessSlider is used with progressBar
   let cbBrightnessSlider = (mode,fb)=>{
     if (mode =="map") Bangle.setLCDBrightness(fb/100);
     if (mode =="remove") {
@@ -106,6 +108,7 @@
     //print("#drag handlers: " + Bangle["#ondrag"].length)
   };
 
+  // For use when dividing the parts of the screen for different sliders.
   let xA = R.x+4*R.w/8;
   let xB = R.x+11*R.w/16;
   let yA = R.x2-Math.round(R.w/20)-5;
@@ -116,7 +119,7 @@
     {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
   );
 
-  // colorSlider controls the background color of this app.
+  // colorSlider controls the background color of this app. It uses custom graphics defined in its callback function.
   let colorSlider = require("Slider").create(
     cbColorSlider,
     {useIncr:true, useMap:false, steps:8, drawableSlider:false, xStart: R.x2-2*R.w/4, height:R.h-21, currLevel:0, propagateDrag:true, timeout:0, dragRect:{x:xA, y:0, x2:xB-1, y2: R.y2}}
