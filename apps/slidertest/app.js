@@ -5,7 +5,7 @@
     Bangle.setLCDBrightness(0.6);
     Bangle.setLCDPower(true);
   };
-  setDevMode();
+  //setDevMode();
 
   //// Drawing operations
 
