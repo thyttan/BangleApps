@@ -117,8 +117,8 @@
       spotifyWidget("PREVIOUS");
     }
     if (LR===0){
-      Bangle.musicControl("vg"); // vg = Volume Get level
       if (!volumeSlider.v.dragActive) {
+        Bangle.musicControl("vg"); // vg = Volume Get level
         setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
           volumeSlider.c.steps=audioLevels.u;
           volumeSlider.v.level=Math.min((audioLevels.c+volIncrPreSync), volumeSlider.c.steps);
