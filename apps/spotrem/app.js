@@ -121,7 +121,7 @@
       if (!volumeSlider.v.dragActive) {
         setTimeout(()=>{ // Timeout so gadgetbridge has time to send back volume levels.
           volumeSlider.c.steps=audioLevels.u;
-          volumeSlider.v.level=audioLevels.c + volIncrPreSync;
+          volumeSlider.v.level=Math.min((audioLevels.c+volIncrPreSync), volumeSlider.c.steps);
         },200);
         Bangle.on('drag', volumeSlider.f.dragSlider);
       }
