@@ -174,7 +174,7 @@
     );
     progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
-    if (volumeSlider&&volumeSlider.v.dragActive) volumeSlider.f.draw(volumeSlider.v.level);
+    if (volumeSlider&&volumeSlider.v.dragActive) setTimeout(()=>(volumeSlider.f.draw(volumeSlider.v.level)),0);
   };
 
   // Navigation input on the main layout
