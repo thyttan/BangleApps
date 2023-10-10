@@ -170,7 +170,7 @@
   let initProgressBar = ()=>{
     progressBar = require("Slider").create(
       cbProgressbar,
-      {dragableSlider:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, propagateDrag:true, width:2, xStart:R.y2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+14, height: R.w-30 ,colorFG:colorFG, outerBorderSize:0, innerBorderSize:0}
+      {dragableSlider:false, steps:trackDur, initLevel:trackPosition, horizontal:true, rounded:false, timeout:0, propagateDrag:true, width:2, xStart:R.y2-50, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+14, height: R.w-30 ,colorFG:colorFG, outerBorderSize:0, innerBorderSize:0}
     );
     progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
@@ -199,7 +199,7 @@
     // volumeSlider controls volume level on the android device.
     volumeSlider=require("Slider").create(
       cbVolumeSlider,
-      {mode:"mapincr", steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:true, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
+      {mode:"mapincr", steps:audioLevels.u, initLevel:audioLevels.c, horizontal:false, rounded:true, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
     );
 
     let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
