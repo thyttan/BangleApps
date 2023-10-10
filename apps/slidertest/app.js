@@ -116,19 +116,19 @@
   // volumeSlider controls volume level on the android device.
   let volumeSlider=require("Slider").create(
     cbVolumeSlider,
-    {useMap:true, steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
+    {mode:"mapincr", steps:audioLevels.u, currLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
   );
 
   // colorSlider controls the background color of this app. It uses custom graphics defined in its callback function.
   let colorSlider = require("Slider").create(
     cbColorSlider,
-    {useIncr:true, useMap:false, steps:8, drawableSlider:false, xStart: R.x2-2*R.w/4, height:R.h-21, currLevel:0, propagateDrag:true, timeout:0, dragRect:{x:xA, y:0, x2:xB-1, y2: R.y2}}
+    {mode:"incr", steps:8, drawableSlider:false, xStart: R.x2-2*R.w/4, height:R.h-21, currLevel:0, propagateDrag:true, timeout:0, dragRect:{x:xA, y:0, x2:xB-1, y2: R.y2}}
   );
 
   // brightnessSlider controls the brightness of the Bangle.js
   let brightnessSlider = require("Slider").create(
     cbBrightnessSlider,
-    {useIncr:false, useMap:true, steps:100, height:R.h-21, timeout:0, currLevel:100*0.0, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}, rounded:true}
+    {mode:"map", steps:100, height:R.h-21, timeout:0, currLevel:100*0.0, propagateDrag:true, dragRect:{x:xB, y:0, x2:R.x2, y2: R.y2}, rounded:true}
   );
 
   // progressBar follows the media track playing on the android device.
@@ -136,7 +136,7 @@
   let initProgressBar = ()=>{
     progressBar = require("Slider").create(
       cbProgressbar,
-      {dragableSlider:false, useMap:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, useIncr:false, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
+      {dragableSlider:false, steps:trackDur, currLevel:trackPosition, horizontal:true, rounded:false, timeout:0, immediateDraw:false, propagateDrag:true, width:Math.round(R.w/20), xStart:R.x2-R.w/20-4, oversizeR:10, oversizeL:10, autoProgress:true, yStart: R.x+4, height: R.w-8}
     );
     progressBar.f.draw(progressBar.v.level);
     if (trackState==="play") progressBar.f.startAutoUpdate();
