@@ -183,7 +183,6 @@
 
     // cbVolumeSlider is used with volumeSlider
     let cbVolumeSlider = (mode,fb)=>{
-      if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
       if (mode =="incr") {
         Bangle.musicControl(fb>0?"volumedown":"volumeup");
         volIncrPreSync-=fb; // used inside timeout in swipeHandler to account for incr done before sync with android volume level.
@@ -199,7 +198,7 @@
     // volumeSlider controls volume level on the android device.
     volumeSlider=require("Slider").create(
       cbVolumeSlider,
-      {mode:"mapincr", steps:audioLevels.u, initLevel:audioLevels.c, horizontal:false, rounded:true, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
+      {mode:"incr", steps:audioLevels.u, initLevel:audioLevels.c, horizontal:false, rounded:true, height: R.h-10, timeout:0.5, propagateDrag:true, colorFG:colorFG}
     );
 
     let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
