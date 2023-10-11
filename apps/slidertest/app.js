@@ -59,7 +59,6 @@
 
   // cbVolumeSlider is used with volumeSlider
   let cbVolumeSlider = (mode,fb)=>{
-    if (mode =="map") Bangle.musicControl({cmd:"vs",extra:Math.round(100*fb/30)}); // vs = Volume Set level
     if (mode =="incr") Bangle.musicControl(fb>0?"volumedown":"volumeup");
     if (mode =="remove") {
       audioLevels.c = fb;
@@ -103,7 +102,6 @@
   // cbProgressbar is used with progressBar
   let cbProgressbar = (mode,fb)=>{
     currentLevel = fb;
-    if (mode =="map") Bangle.musicControl({cmd:"seek",extra:fb});
     //print(process.memory().usage);
     //print("#drag handlers: " + Bangle["#ondrag"].length)
   };
@@ -116,7 +114,7 @@
   // volumeSlider controls volume level on the android device.
   let volumeSlider=require("Slider").create(
     cbVolumeSlider,
-    {mode:"mapincr", steps:audioLevels.u, initLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
+    {mode:"incr", steps:audioLevels.u, initLevel:audioLevels.c, horizontal:false, rounded:false, height:R.h-21, timeout:0.5, propagateDrag:true, xStart:R.x+4, dragRect:{x:R.x, y:0, x2:xA-1, y2: R.y2}}
   );
 
   // colorSlider controls the background color of this app. It uses custom graphics defined in its callback function.
