@@ -1,8 +1,6 @@
 # Slider Test app
 
-- 1: A volume slider that hides when not interacted with. It uses the
-  mapping feature if draging on the slider, and the incrementing feature
-  if draging just beside it.
+- 1: A volume slider that hides when not interacted with. It uses the incrementing mode.
 - 2: A hidden slider that increments a preview of a change to the
   backdrop color. When the user stops interacting with it the backdrop
   is updated.
