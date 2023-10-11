@@ -32,7 +32,7 @@
       Allow alarm enable/disable
 0.31: Implement API for activity fetching
 0.32: Added support for loyalty cards from gadgetbridge
-0.33: Set android media volume by supplying a percentage.
+0.33: Query the android device media volume with `Bangle.musicControl("vg")`
       Forward `musicstate` position information.
       Keep track of if music massage event was triggerd my `musicinfo` or
 			`musicstate`.

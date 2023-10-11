@@ -307,8 +307,8 @@
   });
   // Music control
   Bangle.musicControl = cmd => {
-    // play/pause/next/previous/volumeup/volumedown/vg(Volume Get level)/vs(Volume Set level)/seek
-    if (typeof cmd !== "object") {gbSend({ t: "music", n:cmd });} else {gbSend({ t: "music", n:cmd.cmd, e:cmd.extra });}
+    // play/pause/next/previous/volumeup/volumedown/vg(Volume Get level)
+    gbSend({ t: "music", n:cmd });
   };
   // Message response
   Bangle.messageResponse = (msg,response) => {
