@@ -11,6 +11,11 @@ let R;
 let widgetUtils = require("widget_utils");
 let backToMenu = false;
 let dark = g.theme.dark; // bool
+let timeoutExit;
+let resetTimeoutExit = ()=>{
+  if (timeoutExit) clearTimeout(timeoutExit);
+  timeoutExit = setTimeout(load, 10*60*1000);
+};
 
 // The main layout of the app
 let gfx = function() {
@@ -53,6 +58,7 @@ let gfx = function() {
 
 // Touch handler for main layout
 let touchHandler = function(_, xy) {
+  resetTimeoutExit();
   x = xy.x;
   y = xy.y;
   len = (R.w<R.h+1)?(R.w/3):(R.h/3);
@@ -91,6 +97,7 @@ let touchHandler = function(_, xy) {
 
 // Swipe handler for main layout, used to jump backward and forward within a podcast episode.
 let swipeHandler = function(LR, _) {
+  resetTimeoutExit();
   if (LR==-1) {
     btMsg("service", standardCls, "player.jumpforward");
   }
@@ -108,6 +115,7 @@ let setUI = function() {
         Bangle.removeListener("touch", touchHandler);
         Bangle.removeListener("swipe", swipeHandler);
         clearWatch(buttonHandler);
+        if (timeoutExit) clearTimeout(timeoutExit);
         widgetUtils.show();
       }
     },
