@@ -1,3 +1,4 @@
+{
 const handWidth = 6;
 const hourRadius = 4;
 const hourWidth = 8;
@@ -284,3 +285,4 @@ function draw() {
 }
 
 draw();
+}
