@@ -19,7 +19,7 @@
       min: 0,
       max: 3,
       format: v => [
-        /*LANG*/"Off",
+        /*LANG*/"Yes",
         /*LANG*/"3 min",
         /*LANG*/"10 min",
         /*LANG*/"Always"
