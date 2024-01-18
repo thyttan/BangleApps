@@ -1,4 +1,4 @@
-# App Name
+# App Name - Suggestions: Worklog, Worklogger, Chrono Logger, Chronologgy, ...
 
 More information on making apps:
 
