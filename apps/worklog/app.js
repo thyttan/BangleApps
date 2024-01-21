@@ -68,7 +68,7 @@ function drawButton() {
 function drawHamburgerMenu() {
   var themeColors = getThemeColors();
   var x = g.getWidth() / 2; // Center the hamburger menu horizontally
-  var y = (5/6)*g.getHeight(); // Position it near the bottom
+  var y = (7/8)*g.getHeight(); // Position it near the bottom
   var lineLength = 18; // Length of the hamburger lines
   var spacing = 6; // Space between the lines
   
@@ -100,6 +100,41 @@ function drawTaskName() {
   g.drawString(taskName, x, y); // Draw the task name centered on the screen
 }
 
+// Function to draw the last log entry of the current task
+function drawLastLogEntry() {
+  var themeColors = getThemeColors();
+  var lastLogEntry = getLastLogEntry(); // Call a helper function to retrieve the last log entry
+
+  //g.setFont("6x8", 2); // Set a smaller font for the log entry display
+  g.setFont("Vector", 10); // Set a smaller font for the task name display
+  var logEntryWidth = g.stringWidth(lastLogEntry); // Width of the log entry
+  var logEntryHeight = g.getFontHeight(); // Height of the log entry
+
+  // Calculate position to center the log entry horizontally
+  var x = (g.getWidth()) / 2;
+  
+  // Calculate position to place the log entry properly between the start/stop button and hamburger menu
+  var btnBottomY = (g.getHeight() + 50) / 2; // Y-coordinate of the bottom of the start/stop button
+  var menuBtnYTop = g.getHeight() * (5 / 6); // Y-coordinate of the top of the hamburger menu button
+  var y = btnBottomY + (menuBtnYTop - btnBottomY) / 2 + 6; // Center vertically between button and menu
+
+  g.setColor(themeColors.fg); // Set text color to foreground color
+  g.setFontAlign(0,0);
+  g.drawString(lastLogEntry, x, y); // Draw the log entry centered on the screen
+}
+
+// Helper function to read the last log entry from the current task's log file
+function getLastLogEntry() {
+  var filename = tasks[currentTask];
+  var file = require("Storage").open(filename, "r");
+  var lastLine = "";
+  var line;
+  while ((line = file.readLine()) !== undefined) {
+    lastLine = line; // Keep reading until the last line
+  }
+  return lastLine; // Return the last log entry
+}
+
 // Main UI drawing function
 function drawMainMenu() {
   var themeColors = getThemeColors();
@@ -109,6 +144,7 @@ function drawMainMenu() {
   g.fillRect(Bangle.appRect); // Fill the app area with the background color
 
   drawTaskName(); // Draw the centered task name
+  drawLastLogEntry(); // Draw the last log entry of the current task
   drawButton(); // Draw the Start/Stop toggle button
   drawHamburgerMenu(); // Draw the hamburger menu button icon
 
@@ -134,8 +170,8 @@ function toggleWorkLog() {
 function handleMainMenuTouch(button, xy) {
   var btnTopY = (g.getHeight() - 50) / 2;
   var btnBottomY = btnTopY + 50;
-  var menuBtnYTop = g.getHeight() - 24 - 15;
-  var menuBtnYBottom = g.getHeight() - 24 + 15;
+  var menuBtnYTop = (7/8)*g.getHeight() - 15;
+  var menuBtnYBottom = (7/8)*g.getHeight() + 15;
   var menuBtnXLeft = (g.getWidth() / 2) - 15;
   var menuBtnXRight = (g.getWidth() / 2) + 15;
   
@@ -150,13 +186,12 @@ function handleMainMenuTouch(button, xy) {
 }
 
 // Function to attach the touch event listener
-function attachMainMenuTouchListener() {
-  Bangle.on('touch', handleMainMenuTouch);
-}
-
-// Function to detach the touch event listener
-function detachMainMenuTouchListener() {
-  Bangle.removeListener('touch', handleMainMenuTouch);
+function setMainUI() {
+  Bangle.setUI({
+    mode: "custom",
+    back: load,
+    touch: handleMainMenuTouch
+  });
 }
 
 function saveAppState() {
@@ -191,8 +226,8 @@ function switchTask(taskName) {
     }
 
     // Reinitialize the UI elements
-    Bangle.removeAllListeners("touch");
-    attachMainMenuTouchListener();
+    //Bangle.removeAllListeners("touch");
+    setMainUI();
     drawMainMenu(); // Redraw UI to reflect the task change and the button state
   } else {
     print("Task does not exist!"); // Log an error or notify the user
@@ -227,11 +262,11 @@ require("textinput").input({
         currentTask = taskName;
         state = "stopped"; // <- This is the key part to ensure correct button initialization
 
-        attachMainMenuTouchListener();
+        setMainUI();
         drawMainMenu(); // Redraw UI with the new task
       }
     } else {
-      attachMainMenuTouchListener();
+      setMainUI();
       drawMainMenu(); // User cancelled, redraw main menu
     }
   }).catch(e => {
@@ -244,7 +279,13 @@ require("textinput").input({
 function chooseTask() {
   // Construct the tasks menu from the tasks object
   var taskMenu = {
-    "": { "title": "-- Choose Task --" }
+    "": { "title": "Choose Task",
+      "back" : function() {
+      //Bangle.removeAllListeners("touch");
+      setMainUI(); // Reattach when the menu is exited
+      drawMainMenu(); // Cancel task selection
+      }
+    }
   };
   for (var taskName in tasks) {
     if (!tasks.hasOwnProperty(taskName)) continue;
@@ -258,17 +299,11 @@ function chooseTask() {
   // Add a menu option for creating a new task
   taskMenu["Create New Task"] = createNewTask;
 
-  taskMenu.Exit = function() {
-    Bangle.removeAllListeners("touch");
-    attachMainMenuTouchListener(); // Reattach when the menu is exited
-    drawMainMenu(); // Cancel task selection
-  };
   E.showMenu(taskMenu); // Display the task selection
 }
 
 // Function to annotate the current or last work session
 function annotateTask() {
-  detachMainMenuTouchListener();
   var filename = tasks[currentTask];
   var file = require("Storage").open(filename, "r");
   var lastLine = "";
@@ -291,34 +326,42 @@ function annotateTask() {
       var annotatedEntry = lastLine + (lastLine ? "," : "") + "Annotation: " + annotationText + "\n";
       var file = require("Storage").open(filename, "a");
       file.write(annotatedEntry);
-      Bangle.removeAllListeners("touch");
-      attachMainMenuTouchListener();
+      //Bangle.removeAllListeners("touch");
+      setMainUI();
       drawMainMenu(); // Redraw UI after adding the annotation
     } else {
       // User cancelled, so we do nothing and just redraw the main menu
-      Bangle.removeAllListeners("touch");
-      attachMainMenuTouchListener();
+      //Bangle.removeAllListeners("touch");
+      setMainUI();
       drawMainMenu();
     }
   }).catch(e => {
     console.log("Annotation input error", e);
-    attachMainMenuTouchListener();
+    setMainUI();
     drawMainMenu(); // In case of error also redraw main menu
   });
 }
 
+function syncAndroidObsidian(taskName) {
+  // Open heading "Goal" in "my-file.md" (Important: Without syntax, only Goal):
+  // obsidian://advanced-uri?vault=<your-vault>&filepath=my-file&heading=Goal
+
+  //Bluetooth.println(JSONStringify({t:"intent", action:"android.intent.action.VIEW", data:}))
+}
+
 // Update the showMenu function to include "Change Task" option
 function showMenu() {
-  detachMainMenuTouchListener(); // Detach the touch event listener for the main menu
   var menu = {
-    "": { "title": "-- Menu --" },
+    "": { "title": "Menu",
+      "back": function() {
+        //Bangle.removeAllListeners("touch");
+        setMainUI(); // Reattach when the menu is exited
+        drawMainMenu(); // Redraw the main UI when exiting the menu
+      },
+    },
     "Annotate": annotateTask, // Now calls the real annotation function
     "Change Task": chooseTask, // Opens the task selection screen
-    "Exit": function() {
-      Bangle.removeAllListeners("touch");
-      attachMainMenuTouchListener(); // Reattach when the menu is exited
-      drawMainMenu(); // Redraw the main UI when exiting the menu
-    }
+    "Sync to Android>Obsidian": syncAndroidObsidian,
   };
   E.showMenu(menu);
 }
@@ -353,9 +396,9 @@ function loadAppState() {
 // Additional code to manage app state ...
 // When the application starts, load saved task and state then attach the touch event listener
 loadAppState();
-// When the application starts, attach the touch event listener
-attachMainMenuTouchListener();
 
 Bangle.loadWidgets();
 drawMainMenu(); // Draw the main UI when the app starts
+// When the application starts, attach the touch event listener
+setMainUI();
 
