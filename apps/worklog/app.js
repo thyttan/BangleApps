@@ -342,11 +342,13 @@ function annotateTask() {
   });
 }
 
-function syncAndroidObsidian(taskName) {
-  // Open heading "Goal" in "my-file.md" (Important: Without syntax, only Goal):
-  // obsidian://advanced-uri?vault=<your-vault>&filepath=my-file&heading=Goal
-
-  //Bluetooth.println(JSONStringify({t:"intent", action:"android.intent.action.VIEW", data:}))
+function syncToAndroid(taskName) {
+  let storageFile = require("Storage").open("worklog_"+currentTask+".csv", "r");
+  let contents = storageFile.readLine();
+  while (contents) {
+  Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+currentTask+".csv", c:contents, m:"a"}))
+    contents = storageFile.readLine();
+  }
 }
 
 // Update the showMenu function to include "Change Task" option
@@ -361,7 +363,7 @@ function showMenu() {
     },
     "Annotate": annotateTask, // Now calls the real annotation function
     "Change Task": chooseTask, // Opens the task selection screen
-    "Sync to Android>Obsidian": syncAndroidObsidian,
+    "Sync to Android": ()=>syncToAndroid(currentTask),
   };
   E.showMenu(menu);
 }
