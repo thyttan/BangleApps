@@ -345,6 +345,8 @@ function annotateTask() {
 function syncToAndroid(taskName) {
   let storageFile = require("Storage").open("worklog_"+currentTask+".csv", "r");
   let contents = storageFile.readLine();
+  Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+currentTask+".csv", c:contents, m:"w"}))
+  contents = storageFile.readLine();
   while (contents) {
   Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+currentTask+".csv", c:contents, m:"a"}))
     contents = storageFile.readLine();
