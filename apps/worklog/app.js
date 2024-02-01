@@ -1,5 +1,7 @@
 var currentTask = "default";
 var state = "stopped"; // Default to "stopped"
+var lineNumber = 0;
+var lastLogEntry = "";
 var tasks = {
   default: "worklog_default.csv", // Existing default task log file
   task1: "worklog_task1.csv", // Task 1 log file
@@ -103,7 +105,13 @@ function drawTaskName() {
 // Function to draw the last log entry of the current task
 function drawLastLogEntry() {
   var themeColors = getThemeColors();
-  var lastLogEntry = getLastLogEntry(); // Call a helper function to retrieve the last log entry
+  updateLastLogEntry(); // Call a helper function to retrieve the last log entry
+  lineNumber = lastLogEntry.slice(0, lastLogEntry.indexOf(","));
+  if (lineNumber==="," || lineNumber==="") {
+    lineNumber = 0;
+  } else {
+    lineNumber = Number(lineNumber) + 1;
+  }
 
   //g.setFont("6x8", 2); // Set a smaller font for the log entry display
   g.setFont("Vector", 10); // Set a smaller font for the task name display
@@ -124,7 +132,7 @@ function drawLastLogEntry() {
 }
 
 // Helper function to read the last log entry from the current task's log file
-function getLastLogEntry() {
+function updateLastLogEntry() {
   var filename = tasks[currentTask];
   var file = require("Storage").open(filename, "r");
   var lastLine = "";
@@ -132,7 +140,7 @@ function getLastLogEntry() {
   while ((line = file.readLine()) !== undefined) {
     lastLine = line; // Keep reading until the last line
   }
-  return lastLine; // Return the last log entry
+  lastLogEntry = lastLine;
 }
 
 // Main UI drawing function
@@ -154,7 +162,8 @@ function drawMainMenu() {
 // Function to toggle the work log state
 function toggleWorkLog() {
   var currentTime = new Date().toISOString();
-  var logEntry = (state === "stopped" ? "Start," : "Stop,") + currentTime + "\n";
+  currentTime = currentTime.substring(0,currentTime.length-5);
+  var logEntry = lineNumber + (state === "stopped" ? ",Start," : ",Stop,") + currentTime + "\n";
   var filename = tasks[currentTask];
 
   // Open the appropriate file and append the log entry
