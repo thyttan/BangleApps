@@ -339,14 +339,15 @@
 
     let storageFile = require("Storage").open("worklog_"+taskName+".csv", "r");
     let contents = storageFile.readLine();
-    let lineNumber = 1;
+    let lineNumber = contents ? contents.slice(0, contents.indexOf(",")) : 0;
     let shouldSyncLine = ()=>{return (contents && (isFullSync || (!isFullSync&&lineNumber>lastSyncedLine)));};
     let doSyncLine = (mde)=>{Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+taskName+".csv", c:contents, m:mde}));};
     if (shouldSyncLine()) doSyncLine(mode);
+    contents = storageFile.readLine();
     while (contents) {
-      contents = storageFile.readLine();
-      lineNumber = contents ? lineNumber+1 : lineNumber;
+      lineNumber = contents.slice(0, contents.indexOf(",")); //lineNumber++
       if (shouldSyncLine()) doSyncLine("a");
+      contents = storageFile.readLine();
     }
     tasks[taskName].lastSyncedLine = lineNumber;
   };
