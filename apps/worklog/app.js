@@ -275,7 +275,6 @@
     var taskMenu = {
       "": { "title": "Choose Task",
         "back" : function() {
-          //Bangle.removeAllListeners("touch");
           setMainUI(); // Reattach when the menu is exited
           drawMainMenu(); // Cancel task selection
         }
@@ -328,11 +327,6 @@
   };
 
   let syncToAndroid = (taskName, isFullSync)=>{
-    // TODO:
-    // - Use lastSyncedLine info to optimize bt transfer.
-    // - Have option to sync only unsynced lines as well as complete resync of whole log.
-    // - Have option to sync just the currentTask as well as to sync all logs?
-
     let mode = "a";
     if (isFullSync) mode = "w";
     let lastSyncedLine = tasks[taskName].lastSyncedLine || 0;
@@ -352,6 +346,36 @@
     tasks[taskName].lastSyncedLine = lineNumber;
   };
 
+  // Function to display the list of tasks for selection
+  let syncTasks = ()=>{
+    let isToDoFullSync = false;
+    // Construct the tasks menu from the tasks object
+    var syncMenu = {
+      "": { "title": "Sync Tasks",
+        "back" : function() {
+          setMainUI(); // Reattach when the menu is exited
+          drawMainMenu(); // Cancel task selection
+        }
+      }
+    };
+    syncMenu["Full Resyncs"] = {
+      value: !!isToDoFullSync,  // !! converts undefined to false
+      onchange: ()=>{
+        print(isToDoFullSync);
+        isToDoFullSync = !isToDoFullSync
+        print(isToDoFullSync);
+      },
+    }
+    for (var taskName in tasks) {
+      if (!tasks.hasOwnProperty(taskName)) continue;
+      syncMenu[taskName] = (function(name) {
+        return function() {syncToAndroid(name,isToDoFullSync);};
+      })(taskName);
+    }
+
+    E.showMenu(syncMenu); // Display the task selection
+  };
+
   // Update the showMenu function to include "Change Task" option
   let showMenu = ()=>{
     var menu = {
@@ -364,7 +388,7 @@
       },
       "Annotate": annotateTask, // Now calls the real annotation function
       "Change Task": chooseTask, // Opens the task selection screen
-      "Sync to Android": ()=>syncToAndroid(currentTask,false),
+      "Sync to Android": syncTasks,
     };
     E.showMenu(menu);
   };
