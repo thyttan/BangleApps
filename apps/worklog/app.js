@@ -1,3 +1,7 @@
+// TODO:
+// - Add /*LANG*/ tags for translations.
+// - 
+
 {
   const storage = require("Storage");
   let appData = storage.readJSON("worklog.json", true) || {
@@ -18,17 +22,17 @@
   delete appData;
 
   // Function to get the current theme colors
-  function getThemeColors() {
+  let getThemeColors = ()=>{
     var theme = g.theme;
     return {
       fg: theme.fg, // Foreground color
       bg: theme.bg, // Background color
       fg2: theme.fg2 // Typically used for outlines or text
     };
-  }
+  };
 
   // Function to draw the Start/Stop button with play and pause icons
-  function drawButton() {
+  let drawButton = ()=>{
     var themeColors = getThemeColors();
     var btnWidth = g.getWidth() - 40;
     var btnHeight = 50;
@@ -72,10 +76,10 @@
       g.fillRect(iconX - barSpacing / 2 - barWidth, iconY - barHeight / 2, iconX - barSpacing / 2, iconY + barHeight / 2);
       g.fillRect(iconX + barSpacing / 2, iconY - barHeight / 2, iconX + barSpacing / 2 + barWidth, iconY + barHeight / 2);
     }
-  }
+  };
 
   // Improved Function to draw a simple and centered hamburger menu button
-  function drawHamburgerMenu() {
+  let drawHamburgerMenu = ()=>{
     var themeColors = getThemeColors();
     var x = g.getWidth() / 2; // Center the hamburger menu horizontally
     var y = (7/8)*g.getHeight(); // Position it near the bottom
@@ -87,10 +91,10 @@
     for (var i = -1; i <= 1; i++) {
       g.fillRect(x - lineLength/2, y + i * spacing - 1, x + lineLength/2, y + i * spacing + 1);
     }
-  }
+  };
 
   // Function to draw the task name centered between the widget field and the start/stop button
-  function drawTaskName() {
+  let drawTaskName = ()=>{
     var themeColors = getThemeColors();
 
     g.setFont("Vector", 20); // Set a smaller font for the task name display
@@ -105,12 +109,12 @@
     var buttonTop = (g.getHeight() - 50) / 2; // Y-coordinate of the top of the start/stop button
     var y = g.getHeight()/4; // Center vertically
 
-    g.setColor(themeColors.fg); // Set text color to foreground color
+    g.setColor(themeColors.fg).setFontAlign(0,0); // Set text color to foreground color
     g.drawString(currentTask, x, y); // Draw the task name centered on the screen
-  }
+  };
 
   // Function to draw the last log entry of the current task
-  function drawLastLogEntry() {
+  let drawLastLogEntry = ()=>{
     var themeColors = getThemeColors();
 
     //g.setFont("6x8", 2); // Set a smaller font for the log entry display
@@ -126,13 +130,12 @@
     var menuBtnYTop = g.getHeight() * (5 / 6); // Y-coordinate of the top of the hamburger menu button
     var y = btnBottomY + (menuBtnYTop - btnBottomY) / 2 + 6; // Center vertically between button and menu
 
-    g.setColor(themeColors.fg); // Set text color to foreground color
-    g.setFontAlign(0,0);
+    g.setColor(themeColors.fg).setFontAlign(0,0); // Set text color to foreground color
     g.drawString(tasks[currentTask].lastLine, x, y); // Draw the log entry centered on the screen
-  }
+  };
 
   // Helper function to read the last log entry from the current task's log file
-  function updateLastLogEntry() {
+  let updateLastLogEntry = ()=>{
     var filename = tasks[currentTask].file;
     var file = require("Storage").open(filename, "r");
     var lastLine = "";
@@ -141,10 +144,10 @@
       lastLine = line; // Keep reading until the last line
     }
     tasks[currentTask].lastLine = lastLine;
-  }
+  };
 
   // Main UI drawing function
-  function drawMainMenu() {
+  let drawMainMenu = ()=>{
     var themeColors = getThemeColors();
     g.clear();
     Bangle.drawWidgets(); // Draw any active widgets
@@ -157,10 +160,10 @@
     drawHamburgerMenu(); // Draw the hamburger menu button icon
 
     g.flip(); // Send graphics to the display
-  }
+  };
 
   // Function to toggle the work log state
-  function toggleWorkLog() {
+  let toggleWorkLog = ()=>{
     var currentTime = new Date().toISOString();
     currentTime = currentTime.substring(0,currentTime.length-5);
     tasks[currentTask].lineNumber = Number(tasks[currentTask].lineNumber) + 1;
@@ -175,10 +178,10 @@
     // Toggle the state and update the button text
     tasks[currentTask].state = tasks[currentTask].state === "stopped" ? "started" : "stopped";
     drawMainMenu(); // Redraw the main UI
-  }
+  };
 
   // Define the touch handler function for the main menu
-  function handleMainMenuTouch(button, xy) {
+  let handleMainMenuTouch = (button, xy)=>{
     var btnTopY = (g.getHeight() - 50) / 2;
     var btnBottomY = btnTopY + 50;
     var menuBtnYTop = (7/8)*g.getHeight() - 15;
@@ -194,39 +197,39 @@
     else if (xy.x >= menuBtnXLeft && xy.x <= menuBtnXRight && xy.y >= menuBtnYTop && xy.y <= menuBtnYBottom) {
       showMenu();
     }
-  }
+  };
 
   // Function to attach the touch event listener
-  function setMainUI() {
+  let setMainUI = ()=>{
     Bangle.setUI({
       mode: "custom",
       back: load,
       touch: handleMainMenuTouch
     });
-  }
+  };
 
-  function saveAppState() {
+  let saveAppState = ()=>{
     let appData = {
       currentTask : currentTask,
       tasks : tasks,
-    }
+    };
     require("Storage").writeJSON("worklog.json", appData);
-  }
+  };
   // Set up a listener for the 'kill' event
   E.on('kill', saveAppState);
 
   // Function to switch to a selected task
-  function switchTask(taskName) {
+  let switchTask = (taskName)=>{
     currentTask = taskName; // Update the current task
 
     // Reinitialize the UI elements
     //Bangle.removeAllListeners("touch");
     setMainUI();
     drawMainMenu(); // Redraw UI to reflect the task change and the button state
-  }
+  };
 
   // Function to create a new task
-  function createNewTask() {
+  let createNewTask = ()=>{
     // Prompt the user to input the task's name
     require("textinput").input({
       title: "New Task",
@@ -246,7 +249,7 @@
               lineNumber : 0,
               lastLine : "",
               lastSyncedLine : "",
-            }
+            };
 
             // Open the new file to initialize it (optional)
             //require("Storage").open(filename, "w").write("");
@@ -264,10 +267,10 @@
         console.log("Text input error", e);
         drawMainMenu(); // In case of error also redraw main menu
       });
-  }
+  };
 
   // Function to display the list of tasks for selection
-  function chooseTask() {
+  let chooseTask = ()=>{
     // Construct the tasks menu from the tasks object
     var taskMenu = {
       "": { "title": "Choose Task",
@@ -291,34 +294,29 @@
     taskMenu["Create New Task"] = createNewTask;
 
     E.showMenu(taskMenu); // Display the task selection
-  }
+  };
 
   // Function to annotate the current or last work session
-  function annotateTask() {
+  let annotateTask = ()=>{
     var filename = tasks[currentTask].file;
     var file = require("Storage").open(filename, "r");
     tasks[currentTask].lineNumber ++;
 
-    var promptTitle = "Annotate " + (tasks[currentTask].state === "started" ? "Current" : "Last") + " Session"; // FIXME: Not sure this actually does anything.
-
     // Prompt the user to input the annotation text
     require("textinput").input({
-      title: promptTitle,  // FIXME: Not sure this actually does anything.
       text: "" // Default empty text for annotation
     }).then(result => {
         var annotationText = result.trim();
         if (annotationText) {
           // Append annotation to the last or current log entry
-          var annotatedEntry = tasks[currentTask].lineNumber + ",Annotation: " + annotationText + "\n";
+          var annotatedEntry = tasks[currentTask].lineNumber + ",Note: " + annotationText + "\n";
           var file = require("Storage").open(filename, "a");
           file.write(annotatedEntry);
           tasks[currentTask].lastLine = annotatedEntry;
-          //Bangle.removeAllListeners("touch");
           setMainUI();
           drawMainMenu(); // Redraw UI after adding the annotation
         } else {
           // User cancelled, so we do nothing and just redraw the main menu
-          //Bangle.removeAllListeners("touch");
           setMainUI();
           drawMainMenu();
         }
@@ -327,24 +325,34 @@
         setMainUI();
         drawMainMenu(); // In case of error also redraw main menu
       });
-  }
+  };
 
-  function syncToAndroid(taskName) { // TODO: Use lastSyncedLine info to optimize bt transfer. Have option to sync only unsynced lines as well as complete resync of whole log. Have option to sync just the currentTask as well as to sync all logs?
-    let storageFile = require("Storage").open("worklog_"+currentTask+".csv", "r");
+  let syncToAndroid = (taskName, isFullSync)=>{
+    // TODO:
+    // - Use lastSyncedLine info to optimize bt transfer.
+    // - Have option to sync only unsynced lines as well as complete resync of whole log.
+    // - Have option to sync just the currentTask as well as to sync all logs?
+
+    let mode = "a";
+    if (isFullSync) mode = "w";
+    let lastSyncedLine = tasks[taskName].lastSyncedLine || 0;
+
+    let storageFile = require("Storage").open("worklog_"+taskName+".csv", "r");
     let contents = storageFile.readLine();
-    let lastLineNumber;
-    Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+currentTask+".csv", c:contents, m:"a"}))
-    contents = storageFile.readLine();
+    let lineNumber = 1;
+    let shouldSyncLine = ()=>{return (contents && (isFullSync || (!isFullSync&&lineNumber>lastSyncedLine)));};
+    let doSyncLine = (mde)=>{Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+taskName+".csv", c:contents, m:mde}));};
+    if (shouldSyncLine()) doSyncLine(mode);
     while (contents) {
-      Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+currentTask+".csv", c:contents, m:"a"}))
-      lastLineNumber = contents.slice(0, contents.indexOf(","));
       contents = storageFile.readLine();
+      lineNumber = contents ? lineNumber+1 : lineNumber;
+      if (shouldSyncLine()) doSyncLine("a");
     }
-    lastSyncOfTasks[currentTask] = lastLineNumber;
-  }
+    tasks[taskName].lastSyncedLine = lineNumber;
+  };
 
   // Update the showMenu function to include "Change Task" option
-  function showMenu() {
+  let showMenu = ()=>{
     var menu = {
       "": { "title": "Menu",
         "back": function() {
@@ -355,10 +363,10 @@
       },
       "Annotate": annotateTask, // Now calls the real annotation function
       "Change Task": chooseTask, // Opens the task selection screen
-      "Sync to Android": ()=>syncToAndroid(currentTask),
+      "Sync to Android": ()=>syncToAndroid(currentTask,false),
     };
     E.showMenu(menu);
-  }
+  };
 
   Bangle.loadWidgets();
   drawMainMenu(); // Draw the main UI when the app starts
