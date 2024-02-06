@@ -8,7 +8,7 @@
   "supports" : ["BANGLEJS2"],  
   "readme": "README.md",
   "storage": [
-    {"name":"7chname.app.js","url":"app.js"},
-    {"name":"7chname.img","url":"app-icon.js","evaluate":true}
+    {"name":"worklog.app.js","url":"app.js"},
+    {"name":"worklog.img","url":"app-icon.js","evaluate":true}
   ]
 }
