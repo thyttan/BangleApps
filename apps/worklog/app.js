@@ -1,5 +1,5 @@
 // TODO:
-// - Add /*LANG*/ tags for translations.
+// - Add more /*LANG*/ tags for translations.
 // - 
 
 {
@@ -10,7 +10,7 @@
       default: {
         file : "worklog_default.csv", // Existing default task log file
         state : "stopped",
-        lineNumber : 0,
+        lineNumber : 0, // FIXME: Unsure if lineNumber and lastLine does the same thing...
         lastLine : "",
         lastSyncedLine : "",
       },
@@ -223,7 +223,6 @@
     currentTask = taskName; // Update the current task
 
     // Reinitialize the UI elements
-    //Bangle.removeAllListeners("touch");
     setMainUI();
     drawMainMenu(); // Redraw UI to reflect the task change and the button state
   };
@@ -232,14 +231,13 @@
   let createNewTask = ()=>{
     // Prompt the user to input the task's name
     require("textinput").input({
-      title: "New Task",
       text: "" // Default empty text for new task
     }).then(result => {
         var taskName = result; // Store the result from text input
         if (taskName) {
           if (tasks.hasOwnProperty(taskName)) {
             // Task already exists, handle this case as needed
-            E.showAlert("Task already exists", "Error").then(drawMainMenu);
+            E.showAlert(/*LANG*/"Task already exists", "Error").then(drawMainMenu);
           } else {
             // Create a new task log file for the new task
             var filename = "worklog_" + taskName.replace(/\W+/g, "_") + ".csv";
@@ -273,7 +271,7 @@
   let chooseTask = ()=>{
     // Construct the tasks menu from the tasks object
     var taskMenu = {
-      "": { "title": "Choose Task",
+      "": { "title": /*LANG*/"Choose Task",
         "back" : function() {
           setMainUI(); // Reattach when the menu is exited
           drawMainMenu(); // Cancel task selection
@@ -290,7 +288,7 @@
     }
 
     // Add a menu option for creating a new task
-    taskMenu["Create New Task"] = createNewTask;
+    taskMenu[/*LANG*/"Create New Task"] = createNewTask;
 
     E.showMenu(taskMenu); // Display the task selection
   };
@@ -308,7 +306,7 @@
         var annotationText = result.trim();
         if (annotationText) {
           // Append annotation to the last or current log entry
-          var annotatedEntry = tasks[currentTask].lineNumber + ",Note: " + annotationText + "\n";
+          var annotatedEntry = tasks[currentTask].lineNumber + /*LANG*/",Note: " + annotationText + "\n";
           var file = require("Storage").open(filename, "a");
           file.write(annotatedEntry);
           tasks[currentTask].lastLine = annotatedEntry;
@@ -336,6 +334,7 @@
     let lineNumber = contents ? contents.slice(0, contents.indexOf(",")) : 0;
     let shouldSyncLine = ()=>{return (contents && (isFullSync || (!isFullSync&&lineNumber>lastSyncedLine)));};
     let doSyncLine = (mde)=>{Bluetooth.println(JSON.stringify({t:"file", n:"worklog_"+taskName+".csv", c:contents, m:mde}));};
+
     if (shouldSyncLine()) doSyncLine(mode);
     contents = storageFile.readLine();
     while (contents) {
@@ -351,14 +350,14 @@
     let isToDoFullSync = false;
     // Construct the tasks menu from the tasks object
     var syncMenu = {
-      "": { "title": "Sync Tasks",
+      "": { "title": /*LANG*/"Sync Tasks",
         "back" : function() {
           setMainUI(); // Reattach when the menu is exited
           drawMainMenu(); // Cancel task selection
         }
       }
     };
-    syncMenu["Full Resyncs"] = {
+    syncMenu[/*LANG*/"Full Resyncs"] = {
       value: !!isToDoFullSync,  // !! converts undefined to false
       onchange: ()=>{
         print(isToDoFullSync);
@@ -379,16 +378,15 @@
   // Update the showMenu function to include "Change Task" option
   let showMenu = ()=>{
     var menu = {
-      "": { "title": "Menu",
+      "": { "title": /*LANG*/"Menu",
         "back": function() {
-          //Bangle.removeAllListeners("touch");
           setMainUI(); // Reattach when the menu is exited
           drawMainMenu(); // Redraw the main UI when exiting the menu
         },
       },
-      "Annotate": annotateTask, // Now calls the real annotation function
-      "Change Task": chooseTask, // Opens the task selection screen
-      "Sync to Android": syncTasks,
+      /*LANG*/"Annotate": annotateTask, // Now calls the real annotation function
+      /*LANG*/"Change Task": chooseTask, // Opens the task selection screen
+      /*LANG*/"Sync to Android": syncTasks,
     };
     E.showMenu(menu);
   };
