@@ -360,9 +360,7 @@
     syncMenu[/*LANG*/"Full Resyncs"] = {
       value: !!isToDoFullSync,  // !! converts undefined to false
       onchange: ()=>{
-        print(isToDoFullSync);
         isToDoFullSync = !isToDoFullSync
-        print(isToDoFullSync);
       },
     }
     for (var taskName in tasks) {
