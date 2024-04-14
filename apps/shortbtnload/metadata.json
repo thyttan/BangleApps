@@ -1,0 +1,14 @@
+{ "id": "shortbtnload",
+  "name": "Shorter Button Load Timeout",
+  "shortName":"short load",
+  "version":"0.01",
+  "description": "Shorten the time to trigger a load from 1.5 to 0.7 seconds.",
+  "icon": "app.png",
+  "tags": "",
+  "type": "bootloader",
+  "supports" : ["BANGLEJS2"],
+  "readme": "README.md",
+  "storage": [
+    {"name":"shortbtnload.boot.js","url":"boot.js"}
+  ]
+}
