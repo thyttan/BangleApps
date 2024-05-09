@@ -42,6 +42,7 @@
     };
 
     const touchHandler = (_,e)=>{
+      if (e.type) return; // e.type == 0 for swift touches or 2 for longer ones.
       let R = Bangle.appRect;
       if (e.y<R.y-4) return;
       velocity = 0;

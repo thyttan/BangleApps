@@ -2,3 +2,5 @@
 0.02: Minor code improvements
 0.03: Better scrolling behaviour
 0.04: Fix incorrect appRect handling (missing back buttons and doubled menu titles)
+0.05: Disregard long touches since they make it easy to unintentionally select
+	menu entries.
