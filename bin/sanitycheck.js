@@ -165,6 +165,17 @@ const INTERNAL_FILES_IN_APP_TYPE = { // list of app types and files they SHOULD 
   'textinput' : ['textinput'],
   // notify?
 };
+/* These are warnings we know about but don't want in our output */
+var KNOWN_WARNINGS = [
+  "App gpsrec data file wildcard .gpsrc? does not include app ID",
+  "App owmweather data file weather.json is also listed as data file for app weather",
+  "App messagegui storage file messagegui is also listed as storage file for app messagelist",
+  "App carcrazy has a setting file but no corresponding data entry (add `\"data\":[{\"name\":\"carcrazy.settings.json\"}]`)",
+  "App loadingscreen has a setting file but no corresponding data entry (add `\"data\":[{\"name\":\"loadingscreen.settings.json\"}]`)",
+  "App trex has a setting file but no corresponding data entry (add `\"data\":[{\"name\":\"trex.settings.json\"}]`)",
+  "widhwt isn't an app (widget) but has an app.js file (widhwtapp.js)",
+  "App mysetup storage file widbt_notify.json is also listed as data file for app widbt_notify",
+];
 
 function globToRegex(pattern) {
   const ESCAPE = '.*+-?^${}()|[]\\';
