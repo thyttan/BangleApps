@@ -100,6 +100,7 @@ var KNOWN_WARNINGS = [
   "App loadingscreen has a setting file but no corresponding data entry (add `\"data\":[{\"name\":\"loadingscreen.settings.json\"}]`)",
   "App trex has a setting file but no corresponding data entry (add `\"data\":[{\"name\":\"trex.settings.json\"}]`)",
   "widhwt isn't an app (widget) but has an app.js file (widhwtapp.js)",
+  "App mysetup storage file widbt_notify.json is also listed as data file for app widbt_notify",
 ];
 
 function globToRegex(pattern) {
