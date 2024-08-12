@@ -1276,5 +1276,11 @@ module.exports = {
     "rules": [
       "no-cond-assign"
     ]
+  },
+  "apps/poke_album/app.js": {
+    "hash": "c18ca1bdfe3bb58e9b3d915af149fc6dd1798240351d46844719da07c6ab63fd",
+    "rules": [
+      "no-unused-vars"
+    ]
   }
 };
