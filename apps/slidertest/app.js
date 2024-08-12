@@ -1,11 +1,13 @@
 {
+  /*
   let setDevMode = ()=>{
     Bangle.setLCDTimeout(0); // Easier to read the screen while developing.
     Bangle.setLocked(false);
     Bangle.setLCDBrightness(0.6);
     Bangle.setLCDPower(true);
   };
-  //setDevMode();
+  setDevMode();
+  */
 
   //// Drawing operations
 
@@ -94,14 +96,13 @@
   // cbBrightnessSlider is used with progressBar
   let cbBrightnessSlider = (mode,fb)=>{
     if (mode =="map") Bangle.setLCDBrightness(fb/100);
-    if (mode =="remove") {
-
-    }
+    if (mode =="remove") print("remove handling triggered")
   };
 
   // cbProgressbar is used with progressBar
   let cbProgressbar = (mode,fb)=>{
-    currentLevel = fb;
+    print("progressbar callback");
+    //let currentLevel = fb;
     //print(process.memory().usage);
     //print("#drag handlers: " + Bangle["#ondrag"].length)
   };
@@ -148,9 +149,9 @@
     brightnessSlider.f.draw(brightnessSlider.v.level);
   };
 
-  let isAnySliderDragActive = ()=>{
-    return (volumeSlider.v.dragActive || brightnessSlider.v.dragActive || colorSlider.v.dragActive || progressBar.v.dragActive);
-  };
+//  let isAnySliderDragActive = ()=>{
+//    return (volumeSlider.v.dragActive || brightnessSlider.v.dragActive || colorSlider.v.dragActive || progressBar.v.dragActive);
+//  };
 
   let ebLast = 0; // Used for fix/Hack needed because there is a timeout before the slider is called upon.
   Bangle.on('drag', (e)=>{
