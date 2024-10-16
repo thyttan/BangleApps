@@ -1,43 +1,18 @@
 {
-  const storage = require("Storage");
-  let settings = storage.readJSON("quicklaunch.json", true) || {};
+  Bangle.load = (o => (name) => {
+    o(name);
+    Bangle.emit("fastload",name);
+  })(Bangle.load);
 
-  let leaveTrace = function(trace) {
-    settings.trace = trace;
-    storage.writeJSON("quicklaunch.json", settings);
-    return trace;
-  };
 
-  let launchApp = function(trace) {
-    if (settings[trace+"app"].src){
-      if (settings[trace+"app"].name == "Show Launcher") Bangle.showLauncher();
-        else if (!storage.read(settings[trace+"app"].src)) {
-          E.showMessage(settings[trace+"app"].src+"\n"+/*LANG*/"was not found"+".", "Quick Launch");
-          settings[trace+"app"] = {"name":"(none)"}; // reset entry.
-          storage.write("quicklaunch.json", settings);
-          setTimeout(load, 2000);
-        } else load(settings[trace+"app"].src);
-    }
+  const onClockEvalQuicklauch = ()=>{
+    setTimeout(() => {
+      if (Bangle.CLOCK)
+        eval(require("Storage").read("quicklaunch.eval.js"))
+    }, 0); // 0 second timeout makes sure we look at Bangle.CLOCK after it's set by an app.
   }
 
-  let trace;
+  Bangle.on("fastload", onClockEvalQuicklauch);
 
-  Bangle.on("touch", (_,e) => {
-    if (!Bangle.CLOCK) return;
-    if (Bangle.CLKINFO_FOCUS) return;
-    let R = Bangle.appRect;
-    if (e.x < R.x || e.x > R.x2 || e.y < R.y || e.y > R.y2 ) return;
-    trace = leaveTrace("t"); // t=tap
-    launchApp(trace);
-  });
-
-  Bangle.on("swipe", (lr,ud) => {
-    if (!Bangle.CLOCK) return;
-    if (Bangle.CLKINFO_FOCUS) return;
-    if (lr == -1) trace = leaveTrace("l"); // l=left,
-    if (lr == 1) trace = leaveTrace("r"); // r=right,
-    if (ud == -1) trace = leaveTrace("u"); // u=up,
-    if (ud == 1) trace = leaveTrace("d"); // d=down.
-    launchApp(trace);
-  });
+  onClockEvalQuicklauch() // On boot, load in quicklaunch after the clock face finished.
 }
