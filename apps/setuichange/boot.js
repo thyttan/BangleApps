@@ -108,7 +108,7 @@ Bangle.setUI = (function(mode, cb) {
   if ((options.btn || options.btnRelease) && !Bangle.btnWatches) Bangle.btnWatches = [];
   if (options.btn) Bangle.btnWatches.push(setWatch(options.btn.bind(options), BTN1, {repeat:1,edge:"rising"}))
   if (options.btnRelease) Bangle.btnWatches.push(setWatch(options.btnRelease.bind(options), BTN1, {repeat:1,edge:"falling"}))
-  if (options.remove) // handler for removing the UI (intervals/etc)
+  if (options.remove) // handler for removing the UI (intervals/etc)setum
     Bangle.uiRemove = options.remove;
   if (options.redraw) // handler for redrawing the UI
     Bangle.uiRedraw = options.redraw;

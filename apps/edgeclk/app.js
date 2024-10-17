@@ -320,6 +320,7 @@
     if (drawInterval) return;
     if (settings.showSeconds) {
       drawInterval = setInterval( onSecondInterval, 1000);
+      print(drawInterval)
     } else {
       startTimeout = setTimeout(onMinuteIntervalStarter, (60 - new Date().getSeconds()) * 1000);
     }
@@ -327,6 +328,7 @@
 
   const stopTimers = function () {
     if (startTimeout) clearTimeout(startTimeout);
+  print(drawInterval)
     if (!drawInterval) return;
     clearInterval(drawInterval);
     drawInterval = null;
