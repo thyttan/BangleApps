@@ -1,6 +1,5 @@
 // upload to ram via espruino web ide while in development.
 // TODO:
-// - [ ] make the ui agnostic to screen size
 {
 
   let level = 0;
@@ -18,48 +17,51 @@
     if (!options) { options = {}; }
     let cumulativeDxPlusDy = 0;
 
-    let dialRect = options.dialRect || {
-      x: 0, y: 0, x2: g.getWidth(), y2: g.getHeight(),
+    const DIAL_RECT = options.dialRect || {
+      x: 0, y: 0, x2: g.getWidth()-1, y2: g.getHeight()-1,
       w: g.getWidth(), h: g.getHeight()
     };
+    const ORIGO = { x: DIAL_RECT.x + DIAL_RECT.w / 2, y: DIAL_RECT.y + DIAL_RECT.h / 2 };
 
-    let stepsPerWholeTurn = options.stepsPerWholeTurn || 10;
-    let triggerDistance = 50 * (10 / stepsPerWholeTurn) * dialRect.w / 176; // baseDistance * stepsPerWholeTurnScaling * rectangeScaling.
+    const BASE_RECT_W = 176; // Bangle.js 2 screen pixel width.
+    const STEPS_PER_WHOLE_TURN = options.stepsPerWholeTurn || 10;
+    const THRESHOLD = 50 * (10 / STEPS_PER_WHOLE_TURN) * (DIAL_RECT.w / BASE_RECT_W); // baseThreshold * stepsPerWholeTurnScaling * rectangeScaling.
 
-    let origo = { x: dialRect.x + dialRect.w / 2, y: dialRect.y + dialRect.h / 2 };
-    let dragHandler = function (e) {
+    const DRAG_HANDLER = function (e) {
       "ram"
 
-      if (!(e.y >= dialRect.y && e.y < dialRect.y2 &&
-        e.x >= dialRect.x && e.x < dialRect.x2)) { return; }
+      if (!(e.y >= DIAL_RECT.y && e.y <= DIAL_RECT.y2 &&
+        e.x >= DIAL_RECT.x && e.x <= DIAL_RECT.x2)) { return; }
 
-      if (e.y < origo.y) { cumulativeDxPlusDy += e.dx; } else { cumulativeDxPlusDy -= e.dx; }
-      if (e.x < origo.x) { cumulativeDxPlusDy -= e.dy; } else { cumulativeDxPlusDy += e.dy; }
+      if (e.y < ORIGO.y) { cumulativeDxPlusDy += e.dx; } else { cumulativeDxPlusDy -= e.dx; }
+      if (e.x < ORIGO.x) { cumulativeDxPlusDy -= e.dy; } else { cumulativeDxPlusDy += e.dy; }
 
       let onStep = (step) => {
         Bangle.buzz(20, 0.2)
-        cumulativeDxPlusDy -= triggerDistance * step;
+        cumulativeDxPlusDy -= THRESHOLD * step;
         cb(step);
       }
 
-      if (cumulativeDxPlusDy > triggerDistance) {
+      if (cumulativeDxPlusDy > THRESHOLD) {
         onStep(1);
       }
-      if (cumulativeDxPlusDy < -triggerDistance) {
+      if (cumulativeDxPlusDy < -THRESHOLD) {
         onStep(-1);
       }
 
       E.stopEventPropagation();
     }
 
-    Bangle.prependListener("drag", dragHandler);
+    Bangle.prependListener("drag", DRAG_HANDLER);
   }
 
   // Trying it out:
-  dial(callback, { stepsPerWholeTurn: 15, dialRect: {
-      x: 0, y: 0, x2: g.getWidth()/2, y2: g.getHeight()/2,
-      w: g.getWidth()/2, h: g.getHeight()/2
-    }});
+  dial(callback, {
+    stepsPerWholeTurn: 15/*, dialRect: {
+      x: 0, y: 0, x2: g.getWidth() / 2, y2: g.getHeight() / 2,
+      w: g.getWidth() / 2, h: g.getHeight() / 2
+    }*/
+  });
 }
 
 
