@@ -1,71 +1,60 @@
 // upload to ram via espruino web ide while in development.
-
+// TODO:
+// - [ ] make the ui agnostic to screen size
 {
-  /*
-Bangle.on('drag', function(event) { ... });
-Parameters
 
-event - Object of form {x,y,dx,dy,b} containing touch coordinates, difference in touch coordinates, and an integer b containing number of touch points (currently 1 or 0)
+  let level = 0;
 
-
-   */
-
-let cumulativeDxPlusDy = 0;
-let level = 0;
-let dragHandler = function(e) { "ram"
-    // Use cross product to decide if dialing down/left/screwing out or up/right/screwing in?
-/*
-    // Quadrants: (1 || 2 || 3 || 4)
-    if ((e.dx>0&&e.dy>0) || (e.dx>0&&e.dy>0) || (e.dx>0&&e.dy>0) || (e.dx>0&&e.dy>0)) { //screwing into the screen - increase
-
-    }
-
-    if ((e.dx>0&&e.dy>0) || (e.dx>0&&e.dy>0) || (e.dx>0&&e.dy>0) || (e.dx>0&&e.dy>0)) { //screwing out of the screen - decrease
-
-    }
-
-*/
-
-    const PREV_DX_PLUS_DY = cumulativeDxPlusDy;
-    if (e.y<g.getHeight()/2 ) {
-      cumulativeDxPlusDy += e.dx;
-    } else {
-      cumulativeDxPlusDy -= e.dx;
-    }
-    if (e.x<g.getWidth()/2 ) {
-      cumulativeDxPlusDy -= e.dy;
-    } else {
-      cumulativeDxPlusDy += e.dy;
-    }
-
-    if (Math.abs(cumulativeDxPlusDy)<Math.abs(PREV_DX_PLUS_DY)) {
-      cumulativeDxPlusDy = 0;
-    }
-
-    let onStep = (step)=>{
-      if (step>0) {
-      level ++;
-      }
-      if (step<0) {
-      level --;
-      }
+  let callback = (step) => {
+    level += step;
+    { //development
       print(step, level);
-      g.clear().setFont("Vector:40").setFontAlign(0,0).drawString(level, 85, 85);
-      Bangle.buzz(20, 0.2)
-      cumulativeDxPlusDy = 0;
+      g.clear().setFont("Vector:40").setFontAlign(0, 0).drawString(level, 85, 85);
     }
-
-    if (cumulativeDxPlusDy > 50) {
-      onStep(1);
-    }
-    if (cumulativeDxPlusDy < -50) {
-      onStep(-1);
-    }
- 
-
   }
 
-Bangle.on("drag", dragHandler);
+  let dial = function (cb, options) {
+    "ram"
+    if (!options) { options = {}; }
+    let cumulativeDxPlusDy = 0;
+
+    let dialRect = options.dialRect || {
+      x: 0, y: 0, x2: g.getWidth(), y2: g.getHeight(),
+      w: g.getWidth() / 2, h: g.getHeight() / 2
+    };
+
+    let triggerDistance = 45; // TODO:  triggerDistance ->  45 * g.getWidth() / 176 . To remap to screens of different resolutions.
+
+    let origo = { x: dialRect.x + dialRect.w / 2, y: dialRect.y + dialRect.h / 2 };
+    let dragHandler = function (e) {
+      "ram"
+
+      if (!(e.y >= dialRect.y && e.y < dialRect.y2 &&
+        e.x >= dialRect.x && e.x < dialRect.x2)) {return;}
+
+      if (e.y < origo.y) { cumulativeDxPlusDy += e.dx; } else { cumulativeDxPlusDy -= e.dx; }
+      if (e.x < origo.x) { cumulativeDxPlusDy -= e.dy; } else { cumulativeDxPlusDy += e.dy; }
+
+      let onStep = (step) => {
+        Bangle.buzz(20, 0.2)
+        cumulativeDxPlusDy -= triggerDistance * step;
+        cb(step);
+      }
+
+      if (cumulativeDxPlusDy > triggerDistance) {
+        onStep(1);
+      }
+      if (cumulativeDxPlusDy < -triggerDistance) {
+        onStep(-1);
+      }
+
+      E.stopEventPropagation();
+    }
+
+    Bangle.prependListener("drag", dragHandler);
+  }
+
+  dial(callback);
 }
 
 
