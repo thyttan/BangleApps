@@ -5,45 +5,51 @@
   }, require("Storage").readJSON("swipeinv.json", true) || {});
 
   let getAppIdFromSrc = ()=> {
+    "ram"
     if (!global.__FILE__ || global.__FILE__===".bootcde") {
       return require("Storage").readJSON("setting.json",true).clock
     } else {return global.__FILE__.split(".")[0];}
   }
 
-  setTimeout(() => { // Timeout so we prepend listeners late, hopefully after all other listerners were added.
-    if (settings.global || Object.keys(settings.apps).length > 0) {
+  if (settings.global || Object.keys(settings.apps).length > 0) {
+    print("hi")
+    const Object_on = Object.on;
+    const Object_prependListener = Object.prependListener;
 
-      let swipeInverter = (dirLR, dirUD, obj) => {
-        if (settings.global ^ Object.keys(settings.apps).includes(getAppIdFromSrc())) {
-          if (!(obj && obj.inverted)) {
-            E.stopEventPropagation();
-            obj = Object.assign({inverted:true}, obj);
-
-            if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].swipeH)) {dirLR *= -1;}
-            if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].swipeV)) {dirUD *= -1;}
-
-            Bangle.emit("swipe", dirLR, dirUD, obj)
-          }
-        }
+    const invertBeforeRegisteringListener = function(eventType, eventCallback){
+      "ram"
+      print("hi2")
+      if (eventType === "swipe") {
+        return (function(dirLR, dirUD) {
+          print(dirLR, dirUD)
+          if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].swipeH)) {dirLR *= -1;}
+          if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].swipeV)) {dirUD *= -1;}
+          print(dirLR, dirUD)
+          eventCallback(dirLR, dirUD);
+        })
       }
-
-      let dragInverter = (e) => {
-        if (settings.global ^ Object.keys(settings.apps).includes(getAppIdFromSrc())) {
-          if (!e.inverted) {
-            E.stopEventPropagation();
-            e.inverted = true;
-
-            if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].dragH)) {e.dx *= -1;}
-            if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].dragV)) {e.dy *= -1;}
-
-            Bangle.emit("drag", e);
-          }
-        }
+      if (eventType === "drag") {
+        return (function(e) {
+          if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].dragH)) {e.dx *= -1;}
+          if (settings.global ^ (settings.apps[getAppIdFromSrc()]&&settings.apps[getAppIdFromSrc()].dragV)) {e.dy *= -1;}
+          eventCallback(e);
+        })
       }
-
-      Bangle.prependListener("swipe", swipeInverter);
-      Bangle.prependListener("drag", dragInverter);
-
+      return eventCallback;
     }
-  }, 0)
+
+    Object.on = (parent, eventType /*string*/, eventCallback /*function reacting to event*/, addFirst)=>{
+      "ram"
+      print("hi3")
+      const eventCallbackWrapped = invertBeforeRegisteringListener(eventType, eventCallback);
+      print(eventType, eventCallbackWrapped)
+      Object_on(parent, eventType, eventCallbackWrapped, addFirst);
+    }
+
+    Object.prependListener = function(parent, eventType /*string*/, eventCallback /*function reacting to event*/) {
+      "ram"
+      const eventCallbackWrapper = invertBeforeRegisteringListener(eventType, eventCallback);
+      Object_prependListener(parent, eventType, eventCallbackWrapper);
+    }
+  }
 }
