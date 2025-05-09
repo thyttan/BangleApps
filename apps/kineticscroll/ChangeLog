@@ -3,3 +3,6 @@
 0.03: Better scrolling behaviour
 0.04: Fix incorrect appRect handling (missing back buttons and doubled menu titles)
 0.05: Bring in change from the firmware implementation forwarding the type of touch (short/long).
+0.06: Disregard long touches since they make it easy to unintentionally select
+	menu entries.
+0.07: Add "ram" keyword to see if it gets snappier.
