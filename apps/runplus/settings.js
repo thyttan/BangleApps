@@ -17,6 +17,8 @@
     B5: "step",
     B6: "caden",
     paceLength: 1000, // TODO: Default to either 1km or 1mi based on locale
+    alwaysResume: false,
+    vibrate: false,
     notify: {
       dist: {
         increment: 0,
@@ -72,6 +74,20 @@
         saveSettings();
       }
     };
+  menu[/*LANG*/"Always resume run"] = {
+    value : settings.alwaysResume,
+    onchange : v => {
+      settings.alwaysResume = v;
+      saveSettings();
+    },
+  };
+  menu[/*LANG*/"Start/stop vibrate"] = {
+    value : settings.vibrate,
+    onchange : v => {
+      settings.vibrate = v;
+      saveSettings();
+    },
+  };
   var notificationsMenu = {
     '< Back': function() { E.showMenu(menu) },
   }

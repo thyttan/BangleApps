@@ -6,6 +6,8 @@ Bangle.js App Loader (and Apps)
 * Try the **release version** at [banglejs.com/apps](https://banglejs.com/apps)
 * Try the **development version** at [espruino.github.io](https://espruino.github.io/BangleApps/)
 
+The release version is manually refreshed with regular intervals while the development version is continuously updated as new code is committed to this repository.
+
 **All software (including apps) in this repository is MIT Licensed - see [LICENSE](LICENSE)** By
 submitting code to this repository you confirm that you are happy with it being MIT licensed,
 and that it is not licensed in another way that would make this impossible.
@@ -268,7 +270,8 @@ and which gives information about the app for the Launcher.
                               //   'notify' - provides 'notify' library for showing notifications
                               //   'locale' - provides 'locale' library for language-specific date/distance/etc
                               //              (a version of 'locale' is included in the firmware)
-  "tags": "",                 // comma separated tag list for searching
+                              //   'defaultconfig' - a set of apps that will can be installed and will wipe out all previously installed apps
+  "tags": "",                 // comma separated tag list for searching (don't include uppercase or spaces)
                               // common types are:
                               //   'clock' - it's a clock
                               //   'widget' - it is (or provides) a widget
@@ -287,6 +290,7 @@ and which gives information about the app for the Launcher.
   "dependencies" : { "message":"widget" } // optional, depend on a specific type of widget - see provides_widgets
   "provides_modules" : ["messageicons"] // optional, this app provides a module that can be used with 'require'
   "provides_widgets" : ["battery"] // optional, this app provides a type of widget - 'alarm/battery/bluetooth/pedometer/message'
+  "provides_features" : ["welcome"] // optional, this app provides some feature, used to ensure two aren't installed at once. Currently just 'welcome'
   "default" : true,           // set if an app is the default implementer of something (a widget/module/etc)
   "readme": "README.md",      // if supplied, a link to a markdown-style text file
                               // that contains more information about this app (usage, etc)
@@ -403,7 +407,7 @@ in an iframe.
     <link rel="stylesheet" href="../../css/spectre.min.css">
   </head>
   <body>
-    <script src="../../lib/interface.js"></script>
+    <script src="../../core/lib/interface.js"></script>
     <div id="t">Loading...</div>
     <script>
       function onInit() {

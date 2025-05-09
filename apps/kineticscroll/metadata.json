@@ -6,7 +6,7 @@
   "icon": "app.png",
   "type": "bootloader",
   "tags": "system",
-  "supports" : ["BANGLEJS2"],  
+  "supports" : ["BANGLEJS2"],
   "readme": "README.md",
   "storage": [
     {"name":"kineticscroll.boot.js","url":"boot.min.js"}

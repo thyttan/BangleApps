@@ -114,19 +114,21 @@
 
         // Get the icon and text, skip if the space is empty. Always draw text for folders even if disabled
         switch (entry.type) {
-          case 'app':
+          case 'app': {
             let app = storage.readJSON(entry.id + '.info', false) as AppInfo;
             icon = storage.read(app.icon!)!;
             text = app.name;
             empty = false;
             fontSize = config.display.font;
             break;
-          case 'folder':
+          }
+          case 'folder': {
             icon = FOLDER_ICON;
             text = entry.id;
             empty = false;
             fontSize = config.display.font ? config.display.font : 12;
             break;
+          }
           default:
             continue;
         }
@@ -172,7 +174,7 @@
    * @param _button 1 for left half, 2 for right half
    * @param xy postion on screen
    */
-  let onTouch = function (_button: number, xy: { x: number, y: number } | undefined) {
+  let onTouch = function (_button, xy) {
     // Determine which grid cell was tapped
     let x: number = Math.floor((xy!.x - 12) / ((g.getWidth() - 24) / config.display.rows));
     if (x < 0) x = 0;
@@ -184,12 +186,13 @@
     // Handle the grid cell
     let entry: GridEntry = grid[x]![y]!;
     switch (entry.type) {
-      case "app":
+      case "app": {
         buzz();
         let infoFile = storage.readJSON(entry.id + '.info', false) as AppInfo;
         load(infoFile.src);
         break;
-      case "folder":
+      }
+      case "folder": {
         buzz();
         resetTimeout();
         page = 0;
@@ -197,11 +200,13 @@
         folder = getFolder(folderPath);
         render();
         break;
-      default:
+      }
+      default: {
         resetTimeout();
         break;
+      }
     }
-  }
+  } satisfies TouchCallback;
 
   let page: number = 0;
   let nPages: number; // Set when setting folder
