@@ -1,5 +1,5 @@
 (function() {
-  E.showScroller = function(options) {
+  E.showScroller = function(options) {"ram";
     /* options = {
       h = height
       c = # of items
