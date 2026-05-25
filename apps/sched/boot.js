@@ -14,9 +14,11 @@
     && (a.last != d) // not already fired today
     && (a.dow >> time.getDay() & 1) // is allowed on this day of the week
     && (!a.date || a.date == time.toLocalISOString().substr(0, 10)) // is allowed on this date
+    && (a.t > currentTime) // This fixes the bug but goes agains recent changes to fix other bugs.
   );
   if (active.length) {
     active = active.sort((a,b)=>a.t-b.t); // sort by time
+    // The following two lines would make an alarm set at an earlier time of day to fire immediately instead of at that time the next day.
     var t = active[0].t-currentTime;
     if (t<1000) t=1000; // start alarm minimum 1 sec from now
     /* execute alarm at the correct time. We avoid execing immediately
