@@ -79,17 +79,28 @@ function formatAlarmProperty(msg) {
 }
 
 function showMainMenu(scroll, group, scrollback) {
+  // To handle hiding .hidden alarms from main menu system, and showing only .hidden alarms in Advanced -> Show Hidden
+  group = group||"";
+  let groupPrefix = group.startsWith("Hidden") ? "Hidden" : "";
+  group = group.replace(groupPrefix,"");
+
+  let title = groupPrefix
+    ? group + " " + groupPrefix 
+    : group || /*LANG*/"Alarms & Timers";
+  let back = () => groupPrefix
+    ? (group ? showMainMenu(scrollback, "Hidden") : showAdvancedMenu())
+    : (group ? showMainMenu(scrollback) : load());
   const menu = {
-    "": { "title": group || /*LANG*/"Alarms & Timers", scroll: scroll },
-    "< Back": () => group ? showMainMenu(scrollback) : load(),
+    "": { "title": title, scroll: scroll },
+    "< Back": back,
     /*LANG*/"New...": () => showNewMenu(group)
   };
   const getGroups = settings.showGroup && !group;
   const groups = getGroups ? {} : undefined;
   const getIcon = (e)=>{return e.on ? (e.timer ? iconTimerOn : iconAlarmOn) : (e.timer ? iconTimerOff : iconAlarmOff);};
 
-  alarms.forEach((e, index) => {if (!e.hidden || settings.showHidden) {
-    const E_GROUP = e.group||(e.hidden?"Hidden":undefined);
+  alarms.forEach((e, index) => {if ((!e.hidden && !groupPrefix) || (e.hidden && groupPrefix)) {
+    const E_GROUP = e.group;
     const showAlarmInMainMenu = !(E_GROUP && settings.showGroup) && !group;
     const showAlarmInGroupMenu = settings.showGroup && (group ? E_GROUP === group : false);
     if (showAlarmInMainMenu && showAlarmInGroupMenu) throw new Error("Alarm should not belong to both main and group menu."); // To catch if future changes mess it up.
@@ -116,8 +127,8 @@ function showMainMenu(scroll, group, scrollback) {
   });
 
   if (!group) {
-    Object.keys(groups).sort().forEach(g => menu[g] = () => showMainMenu(null, g, scroller?scroller.scroll:undefined));
-    menu[/*LANG*/"Advanced"] = () => showAdvancedMenu();
+    Object.keys(groups).sort().forEach(g => menu[g] = () => showMainMenu(null, groupPrefix + g, scroller?scroller.scroll:undefined));
+    if (!groupPrefix) menu[/*LANG*/"Advanced"] = () => showAdvancedMenu();
   }
 
   var scroller = E.showMenu(menu).scroller;
@@ -569,6 +580,7 @@ function showAdvancedMenu() {
     "< Back": () => showMainMenu(),
     /*LANG*/"App Settings": () => eval(require("Storage").read("alarm.settings.js"))(() => showAdvancedMenu()),
     /*LANG*/"Scheduler Settings": () => eval(require("Storage").read("sched.settings.js"))(() => showAdvancedMenu()),
+    /*LANG*/"Hidden Alarms": () => showMainMenu(null, "Hidden"),
     /*LANG*/"Enable All": () => enableAll(true),
     /*LANG*/"Disable All": () => enableAll(false),
     /*LANG*/"Delete All": () => deleteAll()
