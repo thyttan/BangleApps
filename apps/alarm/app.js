@@ -178,6 +178,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
   // Helper functions
   const backToPrevMenu = ()=>showMainMenu(scroll, group);
   const prepareAlarmForSaveHelper = (temp)=>prepareAlarmForSave(alarm, alarmIndex, time, date, temp);
+  const returnToEditAlarmMenu = ()=>setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
 
   const menu = {
     "": { "title": title },
@@ -201,7 +202,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
             time.m = result.getMinutes();
             date = result;
             prepareAlarmForSaveHelper(true);
-            setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+            returnToEditAlarmMenu();
           });
         }, 100);
       }
@@ -254,7 +255,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
           keyboard.input({text:alarm.msg}).then(result => {
             alarm.msg = result;
             prepareAlarmForSaveHelper(true);
-            setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+            returnToEditAlarmMenu();
           });
         }, 100);
       }
@@ -267,7 +268,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
           keyboard.input({text:alarm.group}).then(result => {
             alarm.group = result;
             prepareAlarmForSaveHelper(true);
-            setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+            returnToEditAlarmMenu();
           });
         }, 100);
       }
@@ -285,7 +286,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         alarm.rp = repeat;
         alarm.dow = dow;
         prepareAlarmForSaveHelper(true);
-        setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+        returnToEditAlarmMenu();
       })
     },
     /*LANG*/"Vibrate": require("buzz_menu").pattern(alarm.vibrate, v => alarm.vibrate = v),
@@ -329,7 +330,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
           backToPrevMenu();
         } else {
           alarm.t = require("time_utils").encodeTime(time);
-          setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+          returnToEditAlarmMenu();
         }
       });
     };
