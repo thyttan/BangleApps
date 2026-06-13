@@ -110,7 +110,7 @@ function showMainMenu(scroll, group, scrollback) {
     if (showAlarmInMainMenu && showAlarmInGroupMenu) throw new Error("Alarm should not belong to both main and group menu."); // To catch if future changes mess it up.
     if(showAlarmInMainMenu || showAlarmInGroupMenu) {
       const label = trimLabel(getLabel(e),40);
-      menu[label] = {
+      menu[label] = { // FIXME: If an entry matching `label` is already in `menu` object it will be overwritten!
         value: e.on,
         onchange: (v, touch) => {
           if (touch && (2==touch.type || 145<touch.x)) { // Long touch or touched icon.
