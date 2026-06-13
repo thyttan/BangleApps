@@ -177,11 +177,12 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
 
   // Helper functions
   const backToPrevMenu = ()=>showMainMenu(scroll, group);
+  const prepareAlarmForSaveHelper = (temp)=>prepareAlarmForSave(alarm, alarmIndex, time, date, temp);
 
   const menu = {
     "": { "title": title },
     "< Back": () => {
-      prepareAlarmForSave(alarm, alarmIndex, time, date);
+      prepareAlarmForSaveHelper();
       saveAndReload();
       backToPrevMenu();
     }
@@ -198,7 +199,8 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
           datetimeinput.input({datetime}).then(result => {
             time.h = result.getHours();
             time.m = result.getMinutes();
-            prepareAlarmForSave(alarm, alarmIndex, time, result, true);
+            date = result;
+            prepareAlarmForSaveHelper(true);
             setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
           });
         }, 100);
@@ -251,7 +253,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         setTimeout(() => {
           keyboard.input({text:alarm.msg}).then(result => {
             alarm.msg = result;
-            prepareAlarmForSave(alarm, alarmIndex, time, date, true);
+            prepareAlarmForSaveHelper(true);
             setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
           });
         }, 100);
@@ -264,7 +266,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         setTimeout(() => {
           keyboard.input({text:alarm.group}).then(result => {
             alarm.group = result;
-            prepareAlarmForSave(alarm, alarmIndex, time, date, true);
+            prepareAlarmForSaveHelper(true);
             setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
           });
         }, 100);
@@ -282,7 +284,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         }
         alarm.rp = repeat;
         alarm.dow = dow;
-        prepareAlarmForSave(alarm, alarmIndex, time, date, true);
+        prepareAlarmForSaveHelper(true);
         setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
       })
     },
@@ -301,7 +303,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
     },
     /*LANG*/"Cancel": () => backToPrevMenu(),
     /*LANG*/"Confirm": () => {
-      prepareAlarmForSave(alarm, alarmIndex, time, date);
+      prepareAlarmForSaveHelper();
       saveAndReload();
       backToPrevMenu();
     }
