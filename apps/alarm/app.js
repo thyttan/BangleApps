@@ -98,7 +98,7 @@ function showMainMenu(scroll, group, scrollback) {
   const menu = {
     "": { "title": title, scroll: scroll },
     "< Back": back,
-    /*LANG*/"New...": () => showNewMenu(group)
+    /*LANG*/"New...": () => showNewMenu(group, groupPrefix)
   };
   const getGroups = settings.showGroup && !group;
   const groups = getGroups ? {} : undefined;
@@ -119,7 +119,7 @@ function showMainMenu(scroll, group, scrollback) {
             if (e.on) prepareForSave(e, index);
             saveAndReload();
           } else {
-            setTimeout(e.timer ? showEditTimerMenu : showEditAlarmMenu, 10, e, index, undefined, scroller?scroller.scroll:undefined, group);
+            setTimeout(e.timer ? showEditTimerMenu : showEditAlarmMenu, 10, e, index, undefined, scroller?scroller.scroll:undefined, group, groupPrefix);
           }
         },
         format: v=>getIcon(e)
@@ -139,20 +139,20 @@ function showMainMenu(scroll, group, scrollback) {
   var scroller = E.showMenu(menu).scroller;
 }
 
-function showNewMenu(group) {
+function showNewMenu(group, groupPrefix) {
   const newMenu = {
     "": { "title": /*LANG*/"New..." },
-    "< Back": () => showMainMenu(null, group),
-    /*LANG*/"Alarm": () => showEditAlarmMenu(undefined, undefined, false, null, group),
+    "< Back": () => showMainMenu(null, groupPrefix + group),
+    /*LANG*/"Alarm": () => showEditAlarmMenu(undefined, undefined, false, null, group, groupPrefix),
     /*LANG*/"Timer": () => showEditTimerMenu(undefined, undefined),
-    /*LANG*/"Event": () => showEditAlarmMenu(undefined, undefined, true, null, group)
+    /*LANG*/"Event": () => showEditAlarmMenu(undefined, undefined, true, null, group, groupPrefix)
   };
 
-  if (group) delete newMenu[/*LANG*/"Timer"];
+  if (group || groupPrefix) delete newMenu[/*LANG*/"Timer"];
   E.showMenu(newMenu);
 }
 
-function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
+function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group, groupPrefix) {
   var isNew = alarmIndex === undefined;
 
   var alarm = require("sched").newDefaultAlarm();
@@ -176,9 +176,9 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
   try {datetimeinput = require("datetimeinput");} catch(e) {datetimeinput = null;}
 
   // Helper functions
-  const backToPrevMenu = ()=>showMainMenu(scroll, group);
+  const backToPrevMenu = ()=>showMainMenu(scroll, groupPrefix + group);
   const prepareAlarmForSaveHelper = (temp)=>prepareAlarmForSave(alarm, alarmIndex, time, date, temp);
-  const returnToEditAlarmMenu = ()=>setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+  const returnToEditAlarmMenu = ()=>setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group, groupPrefix);
   const prepareAndReturn = ()=>{prepareAlarmForSaveHelper(true); returnToEditAlarmMenu()};
 
   const menu = {
