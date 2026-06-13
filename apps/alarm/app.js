@@ -175,12 +175,15 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
   var datetimeinput;
   try {datetimeinput = require("datetimeinput");} catch(e) {datetimeinput = null;}
 
+  // Helper functions
+  const backToPrevMenu = ()=>showMainMenu(scroll, group);
+
   const menu = {
     "": { "title": title },
     "< Back": () => {
       prepareAlarmForSave(alarm, alarmIndex, time, date);
       saveAndReload();
-      showMainMenu(scroll, group);
+      backToPrevMenu();
     }
   };
 
@@ -296,11 +299,11 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
       value: alarm.hidden || false,
       onchange: v => alarm.hidden = v
     },
-    /*LANG*/"Cancel": () => showMainMenu(scroll, group),
+    /*LANG*/"Cancel": () => backToPrevMenu(),
     /*LANG*/"Confirm": () => {
       prepareAlarmForSave(alarm, alarmIndex, time, date);
       saveAndReload();
-      showMainMenu(scroll, group);
+      backToPrevMenu();
     }
   });
 
@@ -321,7 +324,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         if (confirm) {
           alarms.splice(alarmIndex, 1);
           saveAndReload();
-          showMainMenu(scroll, group);
+          backToPrevMenu();
         } else {
           alarm.t = require("time_utils").encodeTime(time);
           setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
