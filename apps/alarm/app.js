@@ -179,6 +179,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
   const backToPrevMenu = ()=>showMainMenu(scroll, group);
   const prepareAlarmForSaveHelper = (temp)=>prepareAlarmForSave(alarm, alarmIndex, time, date, temp);
   const returnToEditAlarmMenu = ()=>setTimeout(showEditAlarmMenu, 10, alarm, alarmIndex, withDate, scroll, group);
+  const prepareAndReturn = ()=>{prepareAlarmForSaveHelper(true); returnToEditAlarmMenu()};
 
   const menu = {
     "": { "title": title },
@@ -201,8 +202,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
             time.h = result.getHours();
             time.m = result.getMinutes();
             date = result;
-            prepareAlarmForSaveHelper(true);
-            returnToEditAlarmMenu();
+            prepareAndReturn();
           });
         }, 100);
       }
@@ -254,8 +254,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         setTimeout(() => {
           keyboard.input({text:alarm.msg}).then(result => {
             alarm.msg = result;
-            prepareAlarmForSaveHelper(true);
-            returnToEditAlarmMenu();
+            prepareAndReturn();
           });
         }, 100);
       }
@@ -267,8 +266,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         setTimeout(() => {
           keyboard.input({text:alarm.group}).then(result => {
             alarm.group = result;
-            prepareAlarmForSaveHelper(true);
-            returnToEditAlarmMenu();
+            prepareAndReturn();
           });
         }, 100);
       }
@@ -285,8 +283,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group) {
         }
         alarm.rp = repeat;
         alarm.dow = dow;
-        prepareAlarmForSaveHelper(true);
-        returnToEditAlarmMenu();
+        prepareAndReturn();
       })
     },
     /*LANG*/"Vibrate": require("buzz_menu").pattern(alarm.vibrate, v => alarm.vibrate = v),
