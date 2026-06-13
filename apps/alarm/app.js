@@ -157,6 +157,7 @@ function showEditAlarmMenu(selectedAlarm, alarmIndex, withDate, scroll, group, g
 
   var alarm = require("sched").newDefaultAlarm();
   if (isNew && group) alarm.group = group;
+  if (isNew && groupPrefix==="Hidden") alarm.hidden = true;
   if (withDate || (selectedAlarm && selectedAlarm.date)) {
     alarm.del = require("sched").getSettings().defaultDeleteExpiredTimers;
   }
