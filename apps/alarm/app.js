@@ -79,9 +79,8 @@ function formatAlarmProperty(msg) {
 }
 
 // TODO: 
-// - make textinput always return to the expected menu/page after input.
-// - preselect the Hidden option if adding new alarms from Advanced -> Hidden?
 // - test all types of alarms/timers and make sure .hidden alarms show only under Advanced -> Hidden and vice versa.
+// - add /*LANG*/ tags to groupPrefix, preferably in a smart way. At the same time don't break the logic-chains.
 
 function showMainMenu(scroll, group, scrollback) {
   // To handle hiding .hidden alarms from main menu system, and showing only .hidden alarms in Advanced -> Show Hidden
