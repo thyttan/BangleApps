@@ -147,7 +147,7 @@ function showNewMenu(group, groupPrefix) {
     /*LANG*/"Event": () => showEditAlarmMenu(undefined, undefined, true, null, group, groupPrefix)
   };
 
-  if (group || groupPrefix) delete newMenu[/*LANG*/"Timer"];
+  if (group || groupPrefix) delete newMenu[/*LANG*/"Timer"]; // TODO: `showEditTimerMenu` doesn't have plumbing for going back to group or hidden menus. Should that be added?
   E.showMenu(newMenu);
 }
 
