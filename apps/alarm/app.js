@@ -84,6 +84,7 @@ function formatAlarmProperty(msg) {
 
 function showMainMenu(scroll, group, scrollback) {
   // To handle hiding .hidden alarms from main menu system, and showing only .hidden alarms in Advanced -> Show Hidden
+  // TODO: Should this be handled by adding an explicit parameter instead? Now it's like an implicit parameter/argument being passed around sometimes added on to the group string and sometimes as it's own variable...
   group = group||"";
   let groupPrefix = group.startsWith("Hidden") ? "Hidden" : "";
   group = group.replace(groupPrefix,"");
