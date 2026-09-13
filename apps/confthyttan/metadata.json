@@ -28,7 +28,6 @@
     "widanclk":"app",
     "backswipe":"app",
     "torch":"app",
-    "quicklaunch":"app",
     "alarm":"app",
     "recorder":"app",
     "autoreset":"app",
@@ -38,6 +37,7 @@
     "ateatimer":"app",
     "apphist":"app",
     "drained":"app",
+    "quicklaunch":"app",
     "widmsggrid":"app"
   },
   "storage": [
@@ -58,6 +58,8 @@
     {"name":"edgeclk.settings.json",
      "url":"edgeclk.settings.json"},
     {"name":"setting.json",
-     "url":"setting.json"}
+     "url":"setting.json"},
+    {"name": "launch_utils", "url": "../../modules/launch_utils.js", "noOverwrite":true},
+    {"name": "RAM", "content": "require('launch_utils').cacheWidgetsCheck(require('launch_utils').cache(showLaunchers:true,showClocks:true))"}
   ]
 }
