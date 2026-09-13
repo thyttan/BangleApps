@@ -10,7 +10,8 @@
   "readme": "README.md",
   "dependencies" : {
     "messageicons":"app",
-    "messagegui":"app",
+    "widmsggrid":"app",
+    "messages":"module",
     "dtlaunch":"app",
     "edgeclk":"app",
     "kineticscroll":"app",
@@ -37,8 +38,7 @@
     "ateatimer":"app",
     "apphist":"app",
     "drained":"app",
-    "quicklaunch":"app",
-    "widmsggrid":"app"
+    "quicklaunch":"app"
   },
   "storage": [
     {"name":"backswipe.json",
