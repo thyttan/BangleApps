@@ -9,8 +9,6 @@
   "supports" : ["BANGLEJS2"],
   "readme": "README.md",
   "dependencies" : {
-    "messageicons":"app",
-    "widmsggrid":"app",
     "messages":"module",
     "dtlaunch":"app",
     "edgeclk":"app",
