@@ -47,8 +47,6 @@
      "url":"autoreset.json"},
     {"name":"dtlaunch.json",
      "url":"dtlaunch.json"},
-    {"name":"quicklaunch.json",
-     "url":"quicklaunch.json"},
     {"name":"messages.settings.json",
      "url":"messages.settings.json"},
     {"name":"widbt_notify.json",
@@ -59,7 +57,13 @@
      "url":"edgeclk.settings.json"},
     {"name":"setting.json",
      "url":"setting.json"},
-    {"name": "launch_utils", "url": "../../modules/launch_utils.js", "noOverwrite":true},
-    {"name": "RAM", "content": "require('launch_utils').cacheWidgetsCheck(require('launch_utils').cache(showLaunchers:true,showClocks:true))"}
+    {"name":"quicklaunch.json",
+      "url":"quicklaunch.json"},
+    {"name": "launch_utils",
+      "url": "../../modules/launch_utils.js", "noOverwrite":true},
+    {"name": "RAM", 
+      "url": "../quicklaunch/update-settings-object.js"},
+    {"name": "RAM", 
+      "content": "require('launch_utils').cacheWidgetsCheck(require('launch_utils').cache({showLaunchers:true,showClocks:true}).apps)"}
   ]
 }
