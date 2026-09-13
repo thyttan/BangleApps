@@ -177,7 +177,7 @@ const SUPPORTS_DEVICES = ["BANGLEJS","BANGLEJS2","BANGLEJS3","BANGLEJS3_COMPAT"]
 const METADATA_TYPES = ["app","clock","widget","bootloader","RAM","launch","scheduler","notify","locale","settings","textinput","module","clkinfo","defaultconfig"]; // values allowed for "type" field - listed in README.md
 const FORBIDDEN_FILE_NAME_CHARS = /[,;]/; // used as separators in appid.info
 const MAX_FILE_NAME_LENGTH = 28
-const VALID_DUPLICATES = [ '.tfmodel', '.tfnames' ];
+const VALID_DUPLICATES = [ '.tfmodel', '.tfnames'];
 const GRANDFATHERED_ICONS = ["s7clk",  "snek", "astral", "alpinenav", "slomoclock", "arrow", "pebble", "rebble"];
 const INTERNAL_FILES_IN_APP_TYPE = { // list of app types and files they SHOULD provide...
   'textinput' : ['textinput'],
@@ -301,7 +301,7 @@ apps.forEach((app,appIdx) => {
     let char = file.name.match(FORBIDDEN_FILE_NAME_CHARS)
     if (char) ERROR(`App ${app.id} storage file ${file.name} contains invalid character "${char[0]}"`, {file:metadataFile})
     if (fileNames.includes(file.name) && !file.supports)  // assume that there aren't duplicates if 'supports' is set
-      ERROR(`App ${app.id} file ${file.name} is a duplicate`, {file:metadataFile});
+      if ("RAM"!==file.name) ERROR(`App ${app.id} file ${file.name} is a duplicate`, {file:metadataFile});
     if (file.supports && !Array.isArray(file.supports))
       ERROR(`App ${app.id} file ${file.name} supports field must be an array`, {file:metadataFile});
     if (file.supports)
