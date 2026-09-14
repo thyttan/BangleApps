@@ -13,4 +13,4 @@
       firmware now. Fix to handle the new widget theme colors.
       Disable "loading..." message.
 0.10: Fix some dependencies. Compute caches for quicklaunch and launchers
-	during installation.
+	during installation. Add health config.

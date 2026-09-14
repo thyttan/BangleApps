@@ -53,6 +53,8 @@
      "url":"recorder.json"},
     {"name":"edgeclk.settings.json",
      "url":"edgeclk.settings.json"},
+    {"name":"health.json",
+      "url":"health.json"},
     {"name":"setting.json",
      "url":"setting.json"},
     {"name":"quicklaunch.json",
